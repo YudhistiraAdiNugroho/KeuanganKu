@@ -1,12 +1,28 @@
-sdk.dir=/home/my/Android/Sdk
-supabase.url=https://zemuffifcfxqukyphtxh.supabase.co
-supabase.anonKey=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InplbXVmZmlmY2Z4cXVreXBodHhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MjQzMDIsImV4cCI6MjEwNjUwMDMwMn0.YN7ge46H3Ooe-NERCAXsBSolCHS9a94yg2AheTnT5Pc
+# Konfigurasi lokal — JANGAN commit file ini kalau repo jadi publik.
+# Salin dari local.properties.example lalu isi nilaimu.
+
+# --- Supabase (dari dashboard Supabase > Project Settings > API) ---
+supabase.url=https://xyzcompany.supabase.co
+supabase.anonKey=ISI_ANON_KEY_KAMU
+
+# --- 9Router (AI penstruktur struk, OpenAI-compatible) ---
 ninerouter.url=http://43.106.119.94:20128/v1
-ninerouter.key=sk-83286ac7ab3b12e1-3e7vk7-a9bbebb1
-ninerouter.model=free
+ninerouter.key=ISI_API_KEY_9ROUTER_KAMU
+# Nama model yang mendukung chat. Kalau 9Router kamu punya model vision,
+# isi nama model vision di sini agar gambar bisa dibaca langsung.
+ninerouter.model=nama-model-chat
 
 # --- Pembaruan aplikasi via GitHub ---
 # URL mentah file version.json di repo GitHub-mu. Aplikasi memakai ini
 # untuk memeriksa versi terbaru (route "Pembaruan" di menu Lainnya).
 # Contoh: update.url=https://raw.githubusercontent.com/username/keuanganku-android/main/version.json
 update.url=
+# Token GitHub (classic, scope repo) — WAJIB jika repo private, agar aplikasi bisa
+# membaca version.json dan mengunduh APK. Kosongkan jika repo publik.
+update.token=
+# Keystore untuk tanda tangan APK release (opsional; tanpa ini build release
+# memakai debug signing). File keystore JANGAN di-commit ke git!
+# keystore.file=keuanganku.keystore
+# keystore.password=
+# key.alias=keuanganku
+# key.password=
