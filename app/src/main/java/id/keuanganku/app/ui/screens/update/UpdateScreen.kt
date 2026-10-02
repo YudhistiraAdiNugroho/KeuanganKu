@@ -76,7 +76,6 @@ fun UpdateScreen(onBack: () -> Unit) {
                         outFile
                     }
                 }
-                // Minta install via FileProvider
                 val uri = FileProvider.getUriForFile(
                     ctx, "${ctx.packageName}.fileprovider", file
                 )
@@ -142,7 +141,10 @@ fun UpdateScreen(onBack: () -> Unit) {
                         Text("Mengunduh… ${(progress * 100).toInt()}%",
                             style = MaterialTheme.typography.labelMedium)
                     } else {
-                        AppButton("⬇️ Unduh & Install v${info.versionName}") { doDownload(info) }
+                        AppButton(
+                            text = "⬇️ Unduh & Install v${info.versionName}",
+                            onClick = { doDownload(info) }
+                        )
                     }
                 }
                 state is UpdateCheckResult.UpToDate ->
