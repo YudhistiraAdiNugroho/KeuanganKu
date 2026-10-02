@@ -8,3 +8,5 @@
 *.aab
 local.properties
 .DS_Store
+*.keystore
+*.jks
