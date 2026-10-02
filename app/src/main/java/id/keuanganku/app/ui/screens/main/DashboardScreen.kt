@@ -46,6 +46,32 @@ fun DashboardScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
+            // Sapaan personal
+            val hour = java.time.LocalTime.now().hour
+            val greeting = when (hour) {
+                in 5..10 -> "Selamat pagi"
+                in 11..14 -> "Selamat siang"
+                in 15..17 -> "Selamat sore"
+                else -> "Selamat malam"
+            }
+            var userName by remember { mutableStateOf("") }
+            LaunchedEffect(Unit) {
+                userName = repo.getUserName()?.split(" ")?.firstOrNull() ?: ""
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    if (userName.isNotBlank()) "$greeting, $userName" else greeting,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+        }
+        item {
             // Kartu saldo dengan gradien
             Box(
                 modifier = Modifier
