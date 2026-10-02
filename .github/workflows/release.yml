@@ -59,6 +59,7 @@ jobs:
       - name: Buat GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.ver.outputs.name }}
           files: app/build/outputs/apk/release/app-release.apk
           name: v${{ steps.ver.outputs.name }}
           body: "KeuanganKu v${{ steps.ver.outputs.name }} — update dari aplikasi (Lainnya → Cek Pembaruan)."
