@@ -19,6 +19,20 @@ android {
     namespace = "id.keuanganku.app"
     compileSdk = 34
 
+    signingConfigs {
+        create("release") {
+            // Keystore dibaca dari local.properties (tidak di-commit ke git).
+            // Jika tidak dikonfigurasi, build release memakai debug signing.
+            val ksFile = prop("keystore.file")
+            if (ksFile.isNotBlank() && rootProject.file(ksFile).exists()) {
+                storeFile = rootProject.file(ksFile)
+                storePassword = prop("keystore.password")
+                keyAlias = prop("key.alias")
+                keyPassword = prop("key.password")
+            }
+        }
+    }
+
     defaultConfig {
         applicationId = "id.keuanganku.app"
         minSdk = 26
@@ -31,15 +45,22 @@ android {
         buildConfigField("String", "NINEROUTER_URL", "\"${prop("ninerouter.url", "http://43.106.119.94:20128/v1")}\"")
         buildConfigField("String", "NINEROUTER_KEY", "\"${prop("ninerouter.key")}\"")
         buildConfigField("String", "NINEROUTER_MODEL", "\"${prop("ninerouter.model")}\"")
+        // URL file version.json di GitHub (untuk cek pembaruan aplikasi).
+        // Isi di local.properties: update.url=https://raw.githubusercontent.com/USER/REPO/main/version.json
         buildConfigField("String", "UPDATE_URL", "\"${prop("update.url")}\"")
+        // Token GitHub (opsional, wajib jika repo private) untuk cek & unduh pembaruan.
         buildConfigField("String", "UPDATE_TOKEN", "\"${prop("update.token")}\"")
-
 
         vectorDrawables { useSupportLibrary = true }
     }
 
     buildTypes {
         release {
+            // Pakai keystore release jika dikonfigurasi di local.properties
+            val ksFile = prop("keystore.file")
+            if (ksFile.isNotBlank() && rootProject.file(ksFile).exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
