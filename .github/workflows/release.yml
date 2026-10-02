@@ -65,12 +65,16 @@ jobs:
           body: "KeuanganKu v${{ steps.ver.outputs.name }} — update dari aplikasi (Lainnya → Cek Pembaruan)."
 
       - name: Update version.json
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
+          TAG="v${{ steps.ver.outputs.name }}"
+          ASSET_ID=$(gh api "repos/${{ github.repository }}/releases/tags/$TAG" --jq '.assets[] | select(.name=="app-release.apk") | .id')
           cat > version.json << EOF
           {
             "version_code": ${{ steps.ver.outputs.code }},
             "version_name": "${{ steps.ver.outputs.name }}",
-            "apk_url": "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/app-release.apk",
+            "apk_url": "https://api.github.com/repos/${{ github.repository }}/releases/assets/$ASSET_ID",
             "changelog": "Update ke v${{ steps.ver.outputs.name }} tersedia."
           }
           EOF
