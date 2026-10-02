@@ -38,8 +38,11 @@ object UpdateChecker {
         val url = BuildConfig.UPDATE_URL.trim()
         if (url.isBlank()) return@withContext UpdateCheckResult.NotConfigured
         try {
-            val req = Request.Builder().url(url).get().build()
-            client.newCall(req).execute().use { resp ->
+            val reqBuilder = Request.Builder().url(url).get()
+            // Untuk repo private: kirim token via header Authorization
+            val token = BuildConfig.UPDATE_TOKEN.trim()
+            if (token.isNotBlank()) reqBuilder.header("Authorization", "Bearer $token")
+            client.newCall(reqBuilder.build()).execute().use { resp ->
                 if (!resp.isSuccessful) {
                     return@withContext UpdateCheckResult.Error("Server: HTTP ${resp.code}")
                 }
@@ -54,6 +57,12 @@ object UpdateChecker {
         } catch (e: Exception) {
             UpdateCheckResult.Error(e.message ?: "Gagal memeriksa pembaruan")
         }
+    }
+
+    /** Header Authorization untuk unduhan APK dari repo private (dipakai UpdateScreen). */
+    fun authHeader(): String? {
+        val token = BuildConfig.UPDATE_TOKEN.trim()
+        return if (token.isNotBlank()) "Bearer $token" else null
     }
 
     fun currentVersionName(): String = BuildConfig.VERSION_NAME

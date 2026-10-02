@@ -31,9 +31,9 @@ android {
         buildConfigField("String", "NINEROUTER_URL", "\"${prop("ninerouter.url", "http://43.106.119.94:20128/v1")}\"")
         buildConfigField("String", "NINEROUTER_KEY", "\"${prop("ninerouter.key")}\"")
         buildConfigField("String", "NINEROUTER_MODEL", "\"${prop("ninerouter.model")}\"")
-        // URL file version.json di GitHub (untuk cek pembaruan aplikasi).
-        // Isi di local.properties: update.url=https://raw.githubusercontent.com/USER/REPO/main/version.json
         buildConfigField("String", "UPDATE_URL", "\"${prop("update.url")}\"")
+        buildConfigField("String", "UPDATE_TOKEN", "\"${prop("update.token")}\"")
+
 
         vectorDrawables { useSupportLibrary = true }
     }
