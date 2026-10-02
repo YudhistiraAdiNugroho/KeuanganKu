@@ -19,12 +19,26 @@ android {
     namespace = "id.keuanganku.app"
     compileSdk = 34
 
+    signingConfigs {
+        create("release") {
+            // Keystore dibaca dari local.properties (tidak di-commit ke git).
+            // Jika tidak dikonfigurasi, build release memakai debug signing.
+            val ksFile = prop("keystore.file")
+            if (ksFile.isNotBlank() && rootProject.file(ksFile).exists()) {
+                storeFile = rootProject.file(ksFile)
+                storePassword = prop("keystore.password")
+                keyAlias = prop("key.alias")
+                keyPassword = prop("key.password")
+            }
+        }
+    }
+
     defaultConfig {
         applicationId = "id.keuanganku.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
 
         buildConfigField("String", "SUPABASE_URL", "\"${prop("supabase.url")}\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"${prop("supabase.anonKey")}\"")
@@ -40,6 +54,11 @@ android {
 
     buildTypes {
         release {
+            // Pakai keystore release jika dikonfigurasi di local.properties
+            val ksFile = prop("keystore.file")
+            if (ksFile.isNotBlank() && rootProject.file(ksFile).exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
