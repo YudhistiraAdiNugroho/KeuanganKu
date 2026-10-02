@@ -43,9 +43,13 @@ fun ReceiptCaptureScreen(vm: ReceiptViewModel, onDone: (id.keuanganku.app.ui.scr
     val cameraPermLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) {
-            val uri = vm.newCameraUri()
-            cameraUri = uri
-            cameraLauncher.launch(uri)
+            try {
+                val uri = vm.newCameraUri()
+                cameraUri = uri
+                cameraLauncher.launch(uri)
+            } catch (e: Exception) {
+                vm.setError("Tidak bisa membuka kamera: ${e.message ?: "aplikasi kamera tidak ditemukan"}")
+            }
         }
     }
     val galleryPermLauncher = rememberLauncherForActivityResult(
