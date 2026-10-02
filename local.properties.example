@@ -1,0 +1,12 @@
+sdk.dir=/home/my/Android/Sdk
+supabase.url=https://zemuffifcfxqukyphtxh.supabase.co
+supabase.anonKey=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InplbXVmZmlmY2Z4cXVreXBodHhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MjQzMDIsImV4cCI6MjEwNjUwMDMwMn0.YN7ge46H3Ooe-NERCAXsBSolCHS9a94yg2AheTnT5Pc
+ninerouter.url=http://43.106.119.94:20128/v1
+ninerouter.key=sk-83286ac7ab3b12e1-3e7vk7-a9bbebb1
+ninerouter.model=free
+
+# --- Pembaruan aplikasi via GitHub ---
+# URL mentah file version.json di repo GitHub-mu. Aplikasi memakai ini
+# untuk memeriksa versi terbaru (route "Pembaruan" di menu Lainnya).
+# Contoh: update.url=https://raw.githubusercontent.com/username/keuanganku-android/main/version.json
+update.url=

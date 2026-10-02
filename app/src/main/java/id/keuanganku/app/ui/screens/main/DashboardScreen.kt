@@ -1,0 +1,194 @@
+package id.keuanganku.app.ui.screens.main
+
+import androidx.compose.animation.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import id.keuanganku.app.data.repo.FinanceRepository
+import id.keuanganku.app.ui.components.*
+import id.keuanganku.app.ui.theme.*
+import id.keuanganku.app.util.*
+
+@Composable
+fun DashboardScreen(
+    repo: FinanceRepository,
+    onOpenTxForm: (Long?) -> Unit,
+    onOpenSection: (String) -> Unit
+) {
+    val txns by repo.txns.collectAsState()
+    val accounts by repo.accounts.collectAsState()
+    val budgets by repo.budgets.collectAsState()
+    val syncing by repo.syncing.collectAsState()
+
+    val totalBalance = accounts.sumOf { it.balance }
+    val monthKey = currentMonthStr()
+    val monthTx = txns.filter { it.date.startsWith(monthKey) }
+    val income = monthTx.filter { it.type == "income" }.sumOf { it.amount }
+    val expense = monthTx.filter { it.type == "expense" }.sumOf { it.amount }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            // Kartu saldo dengan gradien
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Brush.horizontalGradient(listOf(Brand700, Brand600)))
+                    .padding(20.dp)
+            ) {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Total Saldo", color = Color.White.copy(0.85f),
+                            style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                        if (syncing) CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(formatRp(totalBalance), color = Color.White,
+                        style = MaterialTheme.typography.headlineMedium)
+                    Spacer(Modifier.height(12.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        MiniStat("Masuk", formatRp(income), IncomeGreen)
+                        MiniStat("Keluar", formatRp(expense), Color.White)
+                    }
+                    Text(monthName(monthKey), color = Color.White.copy(0.7f),
+                        style = MaterialTheme.typography.labelSmall)
+                }
+            }
+        }
+
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                QuickAction("＋", "Tambah") { onOpenTxForm(null) }
+                QuickAction("⇄", "Transfer") { onOpenTxForm(-2L) }
+                QuickAction("🎯", "Anggaran") { onOpenSection("anggaran") }
+            }
+        }
+
+        if (budgets.isNotEmpty()) {
+            item {
+                SectionTitle("Anggaran bulan ini")
+                budgets.take(3).forEach { b ->
+                    BudgetRow(b.categoryIcon, b.categoryName, b.spent, b.amount)
+                    Spacer(Modifier.height(8.dp))
+                }
+            }
+        }
+
+        item { SectionTitle("Transaksi terakhir") }
+
+        if (txns.isEmpty()) {
+            item { EmptyState("🧾", "Belum ada transaksi", "Ketuk + untuk mencatat pertama") }
+        } else {
+            items(txns.take(8), key = { it.id }) { t ->
+                TxnRow(t, onClick = { onOpenTxForm(t.id) })
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.MiniStat(label: String, value: String, accent: Color) {
+    Column(Modifier.weight(1f)) {
+        Text(label, color = Color.White.copy(0.75f), style = MaterialTheme.typography.labelSmall)
+        Text(value, color = Color.White, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun RowScope.QuickAction(icon: String, label: String, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .weight(1f)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(icon, style = MaterialTheme.typography.titleLarge)
+            Spacer(Modifier.height(4.dp))
+            Text(label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+@Composable
+fun BudgetRow(icon: String, name: String, spent: Double, budget: Double) {
+    val pct = if (budget > 0) (spent / budget).coerceIn(0.0, 1.0) else 0.0
+    val color = when { pct >= 1.0 -> ExpenseRed; pct >= 0.8 -> Amber; else -> Brand600 }
+    AppCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconCircle(icon)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Row {
+                    Text(name, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                    Text("${(pct * 100).toInt()}%", style = MaterialTheme.typography.labelSmall, color = color,
+                        fontWeight = FontWeight.Bold)
+                }
+                Spacer(Modifier.height(6.dp))
+                LinearProgressIndicator(
+                    progress = { pct.toFloat() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    color = color, trackColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+                Spacer(Modifier.height(4.dp))
+                Text("${formatRp(spent)} / ${formatRp(budget)}",
+                    style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+@Composable
+fun TxnRow(t: id.keuanganku.app.data.repo.Txn, onClick: () -> Unit = {}) {
+    val (icon, color) = when (t.type) {
+        "income" -> "↓" to IncomeGreen
+        "transfer" -> "⇄" to TransferBlue
+        else -> (t.categoryIcon.ifBlank { "🛒" }) to ExpenseRed
+    }
+    val sign = when (t.type) { "income" -> "+"; "expense" -> "−"; else -> "" }
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(1.dp)
+    ) {
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            IconCircle(icon, bg = color.copy(alpha = 0.12f))
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    t.note?.ifBlank { null } ?: t.categoryName.ifBlank { t.accountName },
+                    fontWeight = FontWeight.SemiBold, maxLines = 1
+                )
+                Text("${t.accountName} • ${prettyDate(t.date)}",
+                    style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Text("$sign${formatRp(t.amount)}", fontWeight = FontWeight.Bold, color = color)
+        }
+    }
+}
