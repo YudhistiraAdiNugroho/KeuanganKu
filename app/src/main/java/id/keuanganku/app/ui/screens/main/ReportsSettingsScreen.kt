@@ -84,7 +84,7 @@ fun ReportsScreen(repo: FinanceRepository) {
                 StatCard("Pengeluaran", formatRp(expense), ExpenseRed, Modifier.weight(1f))
             }
             Spacer(Modifier.height(8.dp))
-            StatCard("Selisih", formatRp(income - expense),
+            StatCard("Sisa Saldo", formatRp(income - expense),
                 if (income - expense >= 0) Brand700 else ExpenseRed, Modifier.fillMaxWidth())
         }
 
