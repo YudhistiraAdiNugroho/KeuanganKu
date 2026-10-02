@@ -110,6 +110,8 @@ class FinanceRepository(
 
     fun observe() { scope.launch { reloadLocal() } }
 
+    suspend fun getUserName(): String? = session.getUserName()
+
     // ---------- pull dari server ----------
     suspend fun refreshAll(): OpResult<Unit> = withContext(Dispatchers.IO) {
         if (!isOnline(ctx)) { reloadLocal(); return@withContext OpResult.Ok(Unit) }
