@@ -168,13 +168,18 @@ fun SectionTitle(text: String, action: (@Composable RowScope.() -> Unit)? = null
 
 @Composable
 fun ChipRow(options: List<String>, selected: String, onSelect: (String) -> Unit) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    @OptIn(ExperimentalLayoutApi::class)
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         options.forEach { opt ->
             val sel = opt == selected
             FilterChip(
                 selected = sel,
                 onClick = { onSelect(opt) },
-                label = { Text(opt) },
+                label = { Text(opt, maxLines = 1) },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = Brand100,
                     selectedLabelColor = Brand700
