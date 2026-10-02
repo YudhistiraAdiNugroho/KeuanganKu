@@ -1,6 +1,6 @@
 {
   "version_code": 2,
   "version_name": "1.1.0",
-  "apk_url": "https://github.com/YudhistiraAdiNugroho/KeuanganKu/releases/download/v1.1.0/app-debug.apk",
-  "changelog": "Yang baru di v1.1.0:\n• Cek pembaruan langsung dari aplikasi (menu Lainnya)\n• Ikon mata untuk tampil/sembunyi kata sandi\n• Perbaikan verifikasi OTP saat daftar"
+  "apk_url": "https://github.com/YudhistiraAdiNugroho/KeuanganKu/releases/download/main/app-release.apk",
+  "changelog": "Update ke v1.1.0 tersedia."
 }
