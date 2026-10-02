@@ -55,6 +55,8 @@ class ReceiptViewModel(app: KeuanganKuApp) : ViewModel() {
 
     fun reset() { _state.value = ReceiptUiState.Idle; lastJpeg = null }
 
+    fun setError(msg: String) { _state.value = ReceiptUiState.Error(msg) }
+
     /** URI sementara untuk hasil foto kamera (FileProvider). */
     fun newCameraUri(): Uri {
         val file = File(context.cacheDir, "struk_${System.currentTimeMillis()}.jpg")
