@@ -54,8 +54,13 @@ fun UpdateScreen(onBack: () -> Unit) {
                         .connectTimeout(30, TimeUnit.SECONDS)
                         .readTimeout(60, TimeUnit.SECONDS)
                         .build()
-                    val req = Request.Builder().url(info.apkUrl).get().build()
-                    client.newCall(req).execute().use { resp ->
+                    val reqBuilder = Request.Builder().url(info.apkUrl).get()
+                    UpdateChecker.authHeader()?.let { reqBuilder.header("Authorization", it) }
+                    // Untuk unduhan via GitHub API (api.github.com), wajib header ini:
+                    if (info.apkUrl.contains("api.github.com")) {
+                        reqBuilder.header("Accept", "application/octet-stream")
+                    }
+                    client.newCall(reqBuilder.build()).execute().use { resp ->
                         if (!resp.isSuccessful) throw Exception("Unduhan gagal: HTTP ${resp.code}")
                         val body = resp.body ?: throw Exception("Respons kosong")
                         val total = body.contentLength()
@@ -76,6 +81,7 @@ fun UpdateScreen(onBack: () -> Unit) {
                         outFile
                     }
                 }
+                // Minta install via FileProvider
                 val uri = FileProvider.getUriForFile(
                     ctx, "${ctx.packageName}.fileprovider", file
                 )
