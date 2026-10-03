@@ -29,13 +29,13 @@ fun TransactionsScreen(repo: FinanceRepository) {
     val txns by repo.txns.collectAsState()
     var filter by remember { mutableStateOf("Semua") }
     var query by remember { mutableStateOf("") }
-    var formTarget by remember { mutableStateOf<Long?>(null) } // null=tutup, -1=baru, -2=transfer baru, >0=edit
+    var formTarget by remember { mutableStateOf<Long?>(null) } // null=tutup, -1=baru, -3=pemasukan, -4=pengeluaran, >0=edit
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
     val notifyOk: (String) -> Unit = { msg -> scope.launch { snackbar.showSnackbar(msg) } }
 
     val typeKey = when (filter) {
-        "Pemasukan" -> "income"; "Pengeluaran" -> "expense"; "Transfer" -> "transfer"; else -> null
+        "Pemasukan" -> "income"; "Pengeluaran" -> "expense"; else -> null
     }
     val filtered = txns.filter {
         (typeKey == null || it.type == typeKey) &&
@@ -71,7 +71,7 @@ fun TransactionsScreen(repo: FinanceRepository) {
             Spacer(Modifier.height(8.dp))
             AppTextField(query, { query = it }, "Cari transaksi…")
             Spacer(Modifier.height(8.dp))
-            ChipRow(listOf("Semua", "Pemasukan", "Pengeluaran", "Transfer"), filter) { filter = it }
+            ChipRow(listOf("Semua", "Pemasukan", "Pengeluaran"), filter) { filter = it }
             Spacer(Modifier.height(8.dp))
             if (filtered.isEmpty()) {
                 EmptyState("🔍", "Tidak ada transaksi", "Coba ubah filter atau kata kunci")
@@ -107,12 +107,11 @@ fun TransactionsScreen(repo: FinanceRepository) {
     // Form tambah/ubah (dipicu FAB & klik baris di layar ini)
     formTarget?.let { target ->
         val initialType = when (target) {
-            -2L -> "transfer"
             -3L -> "income"
             -4L -> "expense"
             else -> null
         }
-        val editId = if (target != -1L && target != -2L && target != -3L && target != -4L) target else null
+        val editId = if (target != -1L && target != -3L && target != -4L) target else null
         TransactionFormDialog(
             repo = repo,
             editingId = editId,
@@ -133,7 +132,6 @@ fun TransactionFormDialog(
     onDismiss: () -> Unit,
     onSuccess: (String) -> Unit = {}
 ) {
-    val accounts by repo.accounts.collectAsState()
     val categories by repo.categories.collectAsState()
     val txns by repo.txns.collectAsState()
     val scope = rememberCoroutineScope()
@@ -141,8 +139,8 @@ fun TransactionFormDialog(
     val editing = editingId?.let { id -> txns.find { it.id == id } }
     var type by remember { mutableStateOf(editing?.type ?: prefill?.type ?: initialType ?: "expense") }
     var amount by remember { mutableStateOf(editing?.amount?.toLong()?.toString() ?: prefill?.amount?.toLong()?.toString() ?: "") }
-    var accountId by remember { mutableStateOf(editing?.accountId ?: prefill?.accountId) }
-    var toAccountId by remember { mutableStateOf(editing?.toAccountId) }
+    // Tanpa sistem akun: pakai ID default internal, tidak ditampilkan di UI
+    var accountId by remember { mutableStateOf(editing?.accountId ?: prefill?.accountId ?: 1L) }
     var categoryId by remember { mutableStateOf(editing?.categoryId) }
     var date by remember { mutableStateOf(editing?.date ?: prefill?.date ?: todayStr()) }
     var note by remember { mutableStateOf(editing?.note ?: prefill?.note ?: "") }
@@ -152,7 +150,7 @@ fun TransactionFormDialog(
     var error by remember { mutableStateOf<String?>(null) }
     var confirmDelete by remember { mutableStateOf(false) }
 
-    val typeLabel = mapOf("expense" to "Pengeluaran", "income" to "Pemasukan", "transfer" to "Transfer")
+    val typeLabel = mapOf("expense" to "Pengeluaran", "income" to "Pemasukan")
     val cats = categories.filter { it.type == if (type == "income") "income" else "expense" }
 
     Dialog(onDismissRequest = onDismiss) {
@@ -166,7 +164,7 @@ fun TransactionFormDialog(
                 Text(if (editing != null) "Ubah transaksi" else "Transaksi baru",
                     style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
 
-                ChipRow(listOf("Pengeluaran", "Pemasukan", "Transfer"), typeLabel[type] ?: "") { label ->
+                ChipRow(listOf("Pengeluaran", "Pemasukan"), typeLabel[type] ?: "") { label ->
                     type = typeLabel.entries.first { it.value == label }.key
                 }
 
@@ -174,21 +172,9 @@ fun TransactionFormDialog(
                     keyboardType = KeyboardType.Number,
                     visualTransformation = ThousandSeparatorTransformation())
 
-                DropdownField("Akun", accounts.map { it.name }, accounts.indexOfFirst { it.id == accountId }.takeIf { it >= 0 }) {
-                    accountId = accounts.getOrNull(it)?.id
-                }
-
-                if (type == "transfer") {
-                    DropdownField("Akun tujuan",
-                        accounts.filter { it.id != accountId }.map { it.name },
-                        accounts.filter { it.id != accountId }.indexOfFirst { it.id == toAccountId }.takeIf { it >= 0 }) {
-                        toAccountId = accounts.filter { it.id != accountId }.getOrNull(it)?.id
-                    }
-                } else {
-                    DropdownField("Kategori", listOf("Tanpa kategori") + cats.map { "${it.icon} ${it.name}" },
-                        if (categoryId == null) 0 else cats.indexOfFirst { it.id == categoryId } + 1) {
-                        categoryId = if (it == 0) null else cats.getOrNull(it - 1)?.id
-                    }
+                DropdownField("Kategori", listOf("Tanpa kategori") + cats.map { "${it.icon} ${it.name}" },
+                    if (categoryId == null) 0 else cats.indexOfFirst { it.id == categoryId } + 1) {
+                    categoryId = if (it == 0) null else cats.getOrNull(it - 1)?.id
                 }
 
                 var showDatePicker by remember { mutableStateOf(false) }
@@ -244,16 +230,12 @@ fun TransactionFormDialog(
                     if (saving) { savingGuard.set(false); return@AppButton } // cegah double-tap
                     val amt = amount.toDoubleOrNull() ?: 0.0
                     if (amt <= 0) { error = "Nominal harus lebih dari 0"; savingGuard.set(false); return@AppButton }
-                    if (accountId == null) { error = "Pilih akun dulu"; savingGuard.set(false); return@AppButton }
-                    if (type == "transfer" && (toAccountId == null || toAccountId == accountId)) {
-                        error = "Pilih akun tujuan yang berbeda"; savingGuard.set(false); return@AppButton
-                    }
                     saving = true; error = null
                     scope.launch {
                         val r = if (editing != null) {
-                            repo.updateTransaction(editing.id, accountId!!, toAccountId, categoryId, type, amt, date, note)
+                            repo.updateTransaction(editing.id, accountId, null, categoryId, type, amt, date, note)
                         } else {
-                            repo.addTransaction(accountId!!, toAccountId, categoryId, type, amt, date, note,
+                            repo.addTransaction(accountId, null, categoryId, type, amt, date, note,
                                 prefill?.receiptUrl, prefill?.receiptLocalPath)
                         }
                         saving = false
