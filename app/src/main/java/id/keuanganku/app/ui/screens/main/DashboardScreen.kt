@@ -1,8 +1,12 @@
 package id.keuanganku.app.ui.screens.main
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import id.keuanganku.app.data.repo.FinanceRepository
@@ -59,10 +64,15 @@ fun DashboardScreen(
         state = pullRefreshState,
         modifier = Modifier.fillMaxSize()
     ) {
+    // Responsif: sesuaikan padding & ukuran dengan lebar layar
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val compact = maxWidth < 360.dp
+        val hPad = if (compact) 12.dp else 16.dp
+        val vSpace = if (compact) 8.dp else 12.dp
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        contentPadding = PaddingValues(hPad),
+        verticalArrangement = Arrangement.spacedBy(vSpace)
     ) {
         item {
             // Sapaan personal
@@ -150,6 +160,7 @@ fun DashboardScreen(
         }
     }
     }
+    }
 }
 
 @Composable
@@ -167,10 +178,19 @@ private fun RowScope.QuickAction(icon: String, label: String, onClick: () -> Uni
         "Transfer" -> Color(0xFFE0F2FE)
         else -> Color(0xFFFFF3E0)
     }
+    // Animasi tekan ala e-wallet: kartu mengecil sedikit saat ditekan
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.94f else 1f,
+        animationSpec = spring(stiffness = 400f, dampingRatio = 0.6f),
+        label = "quickaction_scale"
+    )
     Card(
         modifier = Modifier
             .weight(1f)
-            .clickable(onClick = onClick),
+            .graphicsLayer(scaleX = scale, scaleY = scale)
+            .clickable(interactionSource = interactionSource, indication = null, onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
