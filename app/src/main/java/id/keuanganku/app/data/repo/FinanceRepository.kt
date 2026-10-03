@@ -57,7 +57,8 @@ class FinanceRepository(
     private val ctx: Context,
     private val api: RestApi,
     private val dao: FinanceDao,
-    private val session: SessionManager
+    private val session: SessionManager,
+    private val authRepo: AuthRepository
 ) {
     private val scope = CoroutineScope(Dispatchers.IO)
 
@@ -182,6 +183,8 @@ class FinanceRepository(
     // ---------- push antrean offline ----------
     suspend fun syncPending(): OpResult<Unit> = withContext(Dispatchers.IO) {
         if (!isOnline(ctx)) return@withContext OpResult.Ok(Unit)
+        // Refresh token sebelum sync agar tidak 401
+        authRepo.refreshIfNeeded()
         _syncing.value = true
         try {
             val uid = session.getUserId() ?: return@withContext OpResult.Err("Sesi berakhir.")
