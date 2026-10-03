@@ -74,7 +74,6 @@ fun MainScreen(
             if (subScreen != null) {
                 SubScreenScaffold(
                     title = when (subScreen) {
-                        "akun" -> "Akun"
                         "anggaran" -> "Anggaran"
                         "berulang" -> "Transaksi Berulang"
                         else -> "Target Tabungan"
@@ -82,7 +81,6 @@ fun MainScreen(
                     onBack = { subScreen = null }
                 ) {
                     when (subScreen) {
-                        "akun" -> AccountsScreen(repo)
                         "anggaran" -> BudgetsScreen(repo)
                         "berulang" -> RecurringScreen(repo)
                         else -> SavingsScreen(repo)
