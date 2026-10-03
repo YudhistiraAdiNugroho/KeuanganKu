@@ -472,7 +472,23 @@ class FinanceRepository(
     /** Hitung ulang saldo akun dari semua transaksi yang tidak dihapus. */
     /** Perbaiki transaksi yatim: accountId tidak ada di tabel akun -> pindahkan ke akun pertama. */
     private suspend fun repairOrphanedTransactions() {
-        val accounts = dao.accounts()
+        var accounts = dao.accounts()
+        // Jika tidak ada akun sama sekali tapi ada transaksi: buat akun default "Tunai"
+        if (accounts.isEmpty()) {
+            val txns = dao.transactions().filter { !it.deleted }
+            if (txns.isNotEmpty()) {
+                val uid = session.getUserId() ?: return
+                val newAcc = AccountEntity(
+                    id = tempId(), serverId = null, userId = uid,
+                    name = "Tunai", type = "cash", balance = 0.0,
+                    icon = "\uD83D\uDCB0", dirty = true, deleted = false
+                )
+                dao.upsertAccount(newAcc)
+                accounts = dao.accounts()
+            } else {
+                return
+            }
+        }
         if (accounts.isEmpty()) return
         val validIds = accounts.map { it.id }.toSet()
         val defaultId = accounts.first().id
