@@ -187,36 +187,20 @@ class FinanceRepository(
     /** Pull data bersih dari server, merge ke lokal (jangan timpa yang dirty). */
     private suspend fun pullFromServer(uid: String) {
         try {
-            // 1. Pull accounts
-            val serverAccounts = api.getAccounts()
-            val localAccounts = dao.accounts() // fetch sekali di luar loop
-            val serverIdToLocalId = mutableMapOf<Long, Long>()
-            for (sa in serverAccounts) {
-                val sid = sa.id ?: continue
-                val existing = localAccounts.find { it.serverId == sid }
-                if (existing != null) {
-                    serverIdToLocalId[sid] = existing.id
-                    // Jangan timpa yang dirty (ada perubahan lokal belum sync)
-                    if (!existing.dirty) {
-                        dao.upsertAccount(existing.copy(
-                            name = sa.name, type = sa.type,
-                            balance = sa.balance, icon = sa.icon,
-                            dirty = false
-                        ))
-                    }
-                } else {
-                    // Insert baru dengan temp ID lokal
-                    val newId = tempId()
-                    dao.upsertAccount(AccountEntity(
-                        id = newId, serverId = sid, userId = uid,
-                        name = sa.name, type = sa.type,
-                        balance = sa.balance, icon = sa.icon,
-                        dirty = false, deleted = false
-                    ))
-                    serverIdToLocalId[sid] = newId
-                }
+            // Akun tidak di-pull (sistem akun dihapus, pakai lokal saja)
+            // Pastikan ada akun lokal default untuk transaksi
+            var localAccounts = dao.accounts()
+            if (localAccounts.isEmpty()) {
+                val newAcc = AccountEntity(
+                    id = tempId(), serverId = null, userId = uid,
+                    name = "Tunai", type = "cash", balance = 0.0,
+                    icon = "\uD83D\uDCB0", dirty = false, deleted = false
+                )
+                dao.upsertAccount(newAcc)
+                localAccounts = dao.accounts()
             }
-            // 1b. Pull categories untuk mapping
+            val defaultAccId = localAccounts.firstOrNull()?.id ?: return
+            // 1. Pull categories untuk mapping
             val serverCategories = try { api.getCategories() } catch (_: Exception) { emptyList() }
             val localCategories = dao.categories()
             val catServerToLocal = mutableMapOf<Long, Long>()
@@ -235,19 +219,17 @@ class FinanceRepository(
                     catServerToLocal[sid] = newId
                 }
             }
-            // 2. Pull transactions
+            // 2. Pull transactions (pakai akun default lokal)
             val serverTxns = api.getTransactions()
             val localTxns = dao.transactions() // fetch sekali di luar loop
             for (st in serverTxns) {
                 val sid = st.id ?: continue
-                val localAccId = serverIdToLocalId[st.accountId] ?: continue
-                val localToAccId = st.toAccountId?.let { serverIdToLocalId[it] }
                 val localCatId = st.categoryId?.let { catServerToLocal[it] }
                 val existing = localTxns.find { it.serverId == sid }
                 if (existing != null) {
                     if (!existing.dirty) {
                         dao.upsertTransaction(existing.copy(
-                            accountId = localAccId, toAccountId = localToAccId,
+                            accountId = defaultAccId, toAccountId = null,
                             categoryId = localCatId,
                             type = st.type, amount = st.amount, date = st.date,
                             note = st.note, receiptUrl = st.receiptUrl,
@@ -257,7 +239,7 @@ class FinanceRepository(
                 } else {
                     dao.upsertTransaction(TransactionEntity(
                         id = tempId(), serverId = sid, userId = uid,
-                        accountId = localAccId, toAccountId = localToAccId,
+                        accountId = defaultAccId, toAccountId = null,
                         categoryId = localCatId, type = st.type, amount = st.amount,
                         date = st.date, note = st.note,
                         receiptUrl = st.receiptUrl, receiptLocalPath = null,
@@ -281,20 +263,10 @@ class FinanceRepository(
             val accMap = mutableMapOf<Long, Long>() // localId -> serverId
             val catMap = mutableMapOf<Long, Long>()
 
-            // 1. Akun
-            for (a in dao.dirtyAccounts()) {
-                if (a.deleted) {
-                    a.serverId?.let { try { api.deleteAccount("eq.${it}") } catch (_: Exception) {} }
-                    dao.upsertAccount(a.copy(dirty = false))
-                } else if (a.serverId == null) {
-                    val created = api.createAccount(AccountDto(null, uid, a.name, a.type, a.balance, a.icon)).first()
-                    accMap[a.id] = created.id!!
-                    dao.upsertAccount(a.copy(id = a.id, serverId = created.id, dirty = false))
-                } else {
-                    api.updateAccount("eq.${a.serverId}", buildJsonObject { put("name", a.name); put("type", a.type); put("balance", a.balance); put("icon", a.icon) })
-                    dao.upsertAccount(a.copy(dirty = false))
-                }
-            }
+            // 1. Akun: dilewati (sistem akun dihapus dari UI, hanya pakai lokal)
+            // for (a in dao.dirtyAccounts()) {
+            //     ...
+            // }
             // 2. Kategori
             for (c in dao.dirtyCategories()) {
                 if (c.deleted) {
@@ -312,9 +284,28 @@ class FinanceRepository(
             dao.accounts().forEach { if (it.serverId != null) accMap[it.id] = it.serverId }
             dao.categories().forEach { if (it.serverId != null) catMap[it.id] = it.serverId }
 
+            // Pastikan ada akun server default untuk transaksi (sistem akun dihapus dari UI)
+            var defaultServerAccId: Long? = accMap.values.firstOrNull()
+            if (defaultServerAccId == null) {
+                try {
+                    val existing = api.getAccounts().firstOrNull()
+                    if (existing?.id != null) {
+                        defaultServerAccId = existing.id
+                    } else {
+                        val created = api.createAccount(AccountDto(null, uid, "Tunai", "cash", 0.0, "\uD83D\uDCB0")).first()
+                        defaultServerAccId = created.id
+                    }
+                    // Update akun lokal dengan serverId
+                    dao.accounts().firstOrNull()?.let { localAcc ->
+                        dao.upsertAccount(localAcc.copy(serverId = defaultServerAccId, dirty = false))
+                        accMap[localAcc.id] = defaultServerAccId!!
+                    }
+                } catch (_: Exception) {}
+            }
+
             // 3. Transaksi
             for (t in dao.dirtyTransactions()) {
-                val sAcc = accMap[t.accountId] ?: continue
+                val sAcc = accMap[t.accountId] ?: defaultServerAccId ?: continue
                 val sTo = t.toAccountId?.let { accMap[it] }
                 val sCat = t.categoryId?.let { catMap[it] }
                 if (t.deleted) {
