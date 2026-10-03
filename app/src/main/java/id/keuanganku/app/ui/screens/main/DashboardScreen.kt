@@ -115,15 +115,17 @@ fun DashboardScreen(
                     .padding(24.dp)
             ) {
                 Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Total Saldo", color = Color.White.copy(0.85f),
-                            style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                        if (syncing) CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                    Column(modifier = Modifier.offset(y = (-8).dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Total Saldo", color = Color.White.copy(0.85f),
+                                style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                            if (syncing) CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        Text(formatRp(totalBalance), color = Color.White,
+                            style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
                     }
-                    Spacer(Modifier.height(6.dp))
-                    Text(formatRp(totalBalance), color = Color.White,
-                        style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(16.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         MiniStat("Masuk", formatRp(income), IncomeGreen)
@@ -156,7 +158,7 @@ fun DashboardScreen(
             item { EmptyState("🧾", "Belum ada transaksi", "Ketuk + untuk mencatat pertama") }
         } else {
             items(txns.take(8), key = { it.id }) { t ->
-                TxnRow(t, onClick = { onOpenTxForm(t.id) })
+                TxnRow(t)
             }
         }
     }
@@ -174,11 +176,11 @@ private fun RowScope.MiniStat(label: String, value: String, accent: Color) {
 
 @Composable
 private fun RowScope.QuickAction(icon: String, label: String, onClick: () -> Unit) {
-    val iconBg = when (label) {
-        "Pemasukan" -> Brand100
-        "Pengeluaran" -> Color(0xFFFFEBEE)
-        "Transfer" -> Color(0xFFE0F2FE)
-        else -> Color(0xFFFFF3E0)
+    val (iconBg, iconColor) = when (label) {
+        "Pemasukan" -> Brand100 to Brand700
+        "Pengeluaran" -> Color(0xFFFFEBEE) to Color(0xFFC62828)
+        "Transfer" -> Color(0xFFE0F2FE) to Color(0xFF0277BD)
+        else -> Color(0xFFFFF3E0) to Color(0xFFE65100)
     }
     // Animasi tekan ala e-wallet: kartu mengecil sedikit saat ditekan
     val interactionSource = remember { MutableInteractionSource() }
@@ -210,7 +212,7 @@ private fun RowScope.QuickAction(icon: String, label: String, onClick: () -> Uni
                     .background(iconBg),
                 contentAlignment = Alignment.Center
             ) {
-                Text(icon, style = MaterialTheme.typography.titleMedium)
+                Text(icon, style = MaterialTheme.typography.titleMedium, color = iconColor, fontWeight = FontWeight.Bold)
             }
             Spacer(Modifier.height(6.dp))
             Text(
@@ -256,17 +258,20 @@ fun BudgetRow(icon: String, name: String, spent: Double, budget: Double) {
 }
 
 @Composable
-fun TxnRow(t: id.keuanganku.app.data.repo.Txn, onClick: () -> Unit = {}) {
+fun TxnRow(t: id.keuanganku.app.data.repo.Txn, onClick: (() -> Unit)? = null) {
     val (icon, color) = when (t.type) {
         "income" -> "↓" to IncomeGreen
         "transfer" -> "⇄" to TransferBlue
         else -> (t.categoryIcon.ifBlank { "🛒" }) to ExpenseRed
     }
     val sign = when (t.type) { "income" -> "+"; "expense" -> "−"; else -> "" }
+    val cardModifier = if (onClick != null) {
+        Modifier.fillMaxWidth().clickable(onClick = onClick)
+    } else {
+        Modifier.fillMaxWidth()
+    }
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+        modifier = cardModifier,
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(4.dp)
@@ -279,7 +284,7 @@ fun TxnRow(t: id.keuanganku.app.data.repo.Txn, onClick: () -> Unit = {}) {
                     t.note?.ifBlank { null } ?: t.categoryName.ifBlank { "Transaksi" },
                     fontWeight = FontWeight.SemiBold, maxLines = 1
                 )
-                Text(prettyDate(t.date),
+                Text(prettyDateTime(t.date),
                     style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Text("$sign${formatRp(t.amount)}", fontWeight = FontWeight.Bold, color = color)
