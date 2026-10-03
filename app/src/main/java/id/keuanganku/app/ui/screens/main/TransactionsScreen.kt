@@ -142,7 +142,7 @@ fun TransactionFormDialog(
     // Tanpa sistem akun: pakai ID default internal, tidak ditampilkan di UI
     var accountId by remember { mutableStateOf(editing?.accountId ?: prefill?.accountId ?: 1L) }
     var categoryId by remember { mutableStateOf(editing?.categoryId) }
-    var date by remember { mutableStateOf(editing?.date ?: prefill?.date ?: todayStr()) }
+    var date by remember { mutableStateOf(editing?.date ?: prefill?.date ?: nowDateTimeStr()) }
     var note by remember { mutableStateOf(editing?.note ?: prefill?.note ?: "") }
     var saving by remember { mutableStateOf(false) }
     // Guard sinkron anti double-tap (AtomicBoolean update seketika, tidak tunggu recompose)
@@ -200,7 +200,8 @@ fun TransactionFormDialog(
                 if (showDatePicker) {
                     val datePickerState = rememberDatePickerState(
                         initialSelectedDateMillis = try {
-                            java.time.LocalDate.parse(date).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+                            val dateOnly = if (date.length > 10) date.substring(0, 10) else date
+                            java.time.LocalDate.parse(dateOnly).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
                         } catch (_: Exception) { System.currentTimeMillis() }
                     )
                     DatePickerDialog(
