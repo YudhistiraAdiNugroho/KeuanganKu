@@ -106,8 +106,13 @@ fun TransactionsScreen(repo: FinanceRepository) {
 
     // Form tambah/ubah (dipicu FAB & klik baris di layar ini)
     formTarget?.let { target ->
-        val initialType = if (target == -2L) "transfer" else null
-        val editId = if (target != -1L && target != -2L) target else null
+        val initialType = when (target) {
+            -2L -> "transfer"
+            -3L -> "income"
+            -4L -> "expense"
+            else -> null
+        }
+        val editId = if (target != -1L && target != -2L && target != -3L && target != -4L) target else null
         TransactionFormDialog(
             repo = repo,
             editingId = editId,
@@ -142,6 +147,8 @@ fun TransactionFormDialog(
     var date by remember { mutableStateOf(editing?.date ?: prefill?.date ?: todayStr()) }
     var note by remember { mutableStateOf(editing?.note ?: prefill?.note ?: "") }
     var saving by remember { mutableStateOf(false) }
+    // Guard sinkron anti double-tap (AtomicBoolean update seketika, tidak tunggu recompose)
+    val savingGuard = remember { java.util.concurrent.atomic.AtomicBoolean(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var confirmDelete by remember { mutableStateOf(false) }
 
@@ -232,12 +239,14 @@ fun TransactionFormDialog(
                 ErrorText(error)
 
                 AppButton(if (editing != null) "Simpan perubahan" else "Simpan", {
-                    if (saving) return@AppButton // cegah double-tap
+                    // Guard atomik: tolak tap kedua walau datang sebelum recompose
+                    if (!savingGuard.compareAndSet(false, true)) return@AppButton
+                    if (saving) { savingGuard.set(false); return@AppButton } // cegah double-tap
                     val amt = amount.toDoubleOrNull() ?: 0.0
-                    if (amt <= 0) { error = "Nominal harus lebih dari 0"; return@AppButton }
-                    if (accountId == null) { error = "Pilih akun dulu"; return@AppButton }
+                    if (amt <= 0) { error = "Nominal harus lebih dari 0"; savingGuard.set(false); return@AppButton }
+                    if (accountId == null) { error = "Pilih akun dulu"; savingGuard.set(false); return@AppButton }
                     if (type == "transfer" && (toAccountId == null || toAccountId == accountId)) {
-                        error = "Pilih akun tujuan yang berbeda"; return@AppButton
+                        error = "Pilih akun tujuan yang berbeda"; savingGuard.set(false); return@AppButton
                     }
                     saving = true; error = null
                     scope.launch {
@@ -248,6 +257,7 @@ fun TransactionFormDialog(
                                 prefill?.receiptUrl, prefill?.receiptLocalPath)
                         }
                         saving = false
+                        savingGuard.set(false)
                         when (r) {
                             is id.keuanganku.app.data.repo.OpResult.Ok -> {
                                 onSuccess(if (editing != null) "Transaksi berhasil diubah" else "Transaksi berhasil ditambahkan")
