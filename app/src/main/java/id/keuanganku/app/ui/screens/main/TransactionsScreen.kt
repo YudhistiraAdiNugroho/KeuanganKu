@@ -23,6 +23,7 @@ import id.keuanganku.app.ui.theme.*
 import id.keuanganku.app.util.*
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionsScreen(repo: FinanceRepository) {
     val txns by repo.txns.collectAsState()
