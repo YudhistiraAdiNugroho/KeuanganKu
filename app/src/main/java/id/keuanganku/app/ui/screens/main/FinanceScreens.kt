@@ -87,7 +87,7 @@ fun BudgetFormDialog(
     val scope = rememberCoroutineScope()
 
     Dialog(onDismissRequest = onDismiss) {
-        Card(shape = RoundedCornerShape(24.dp)) {
+        Card(shape = RoundedCornerShape(24.dp), elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("Anggaran ${monthName(currentMonthStr())}",
                     style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
@@ -202,7 +202,7 @@ fun RecurringFormDialog(
     val cats = categories.filter { it.type == if (type == "income") "income" else "expense" }
 
     Dialog(onDismissRequest = onDismiss) {
-        Card(shape = RoundedCornerShape(24.dp)) {
+        Card(shape = RoundedCornerShape(24.dp), elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)) {
             Column(
                 Modifier.padding(20.dp).heightIn(max = 560.dp).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -325,7 +325,7 @@ fun SavingFormDialog(repo: FinanceRepository, onDismiss: () -> Unit) {
     val icons = listOf("🐷", "✈️", "🏠", "🚗", "💻", "🎓", "💍", "🏥")
 
     Dialog(onDismissRequest = onDismiss) {
-        Card(shape = RoundedCornerShape(24.dp)) {
+        Card(shape = RoundedCornerShape(24.dp), elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("Target baru", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 AppTextField(name, { name = it }, "Nama target")
@@ -366,7 +366,7 @@ fun MoveSavingDialog(
     val scope = rememberCoroutineScope()
 
     Dialog(onDismissRequest = onDismiss) {
-        Card(shape = RoundedCornerShape(24.dp)) {
+        Card(shape = RoundedCornerShape(24.dp), elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(if (isAdd) "Nabung ke ${goal.name}" else "Tarik dari ${goal.name}",
                     style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
