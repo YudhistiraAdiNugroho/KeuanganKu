@@ -28,3 +28,11 @@ fun monthName(yyyyMm: String): String = try {
         "Juli", "Agustus", "September", "Oktober", "November", "Desember")
     "${names[m.toInt()]} $y"
 } catch (_: Exception) { yyyyMm }
+
+fun formatTanggalHariIni(): String = try {
+    val days = listOf("", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu")
+    val months = listOf("", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember")
+    val now = LocalDate.now()
+    "${days[now.dayOfWeek.value]}, ${now.dayOfMonth} ${months[now.monthValue]} ${now.year}"
+} catch (_: Exception) { "" }
