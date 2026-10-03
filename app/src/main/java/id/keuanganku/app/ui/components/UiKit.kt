@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -48,6 +49,7 @@ fun AppTextField(
     isPassword: Boolean = false,
     singleLine: Boolean = true,
     enabled: Boolean = true,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
     val hidePassword = isPassword && !passwordVisible
@@ -57,7 +59,7 @@ fun AppTextField(
         label = { Text(label) },
         modifier = modifier.fillMaxWidth(),
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        visualTransformation = if (hidePassword) PasswordVisualTransformation() else VisualTransformation.None,
+        visualTransformation = if (hidePassword) PasswordVisualTransformation() else visualTransformation,
         trailingIcon = {
             if (isPassword) {
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -217,5 +219,33 @@ fun ClickableRow(icon: String, title: String, subtitle: String = "", onClick: ()
             if (subtitle.isNotBlank()) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Text("›", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** Format angka dengan titik pemisah ribuan saat diketik (50000 -> 50.000). */
+class ThousandSeparatorTransformation : VisualTransformation {
+    override fun filter(text: androidx.compose.ui.text.AnnotatedString): androidx.compose.ui.text.input.TransformedText {
+        val original = text.text.filter(Char::isDigit)
+        if (original.isEmpty()) return androidx.compose.ui.text.input.TransformedText(text, androidx.compose.ui.text.input.OffsetMapping.Identity)
+        val formatted = original.reversed().chunked(3).joinToString(".").reversed()
+        val offsetMapping = object : androidx.compose.ui.text.input.OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int {
+                val digitsBefore = text.text.take(offset).count(Char::isDigit)
+                var transformedOffset = 0
+                var digitsSeen = 0
+                for (c in formatted) {
+                    if (digitsSeen >= digitsBefore) break
+                    if (c.isDigit()) digitsSeen++
+                    transformedOffset++
+                }
+                return transformedOffset.coerceAtMost(formatted.length)
+            }
+            override fun transformedToOriginal(offset: Int): Int {
+                return formatted.take(offset).count(Char::isDigit)
+            }
+        }
+        return androidx.compose.ui.text.input.TransformedText(
+            androidx.compose.ui.text.AnnotatedString(formatted), offsetMapping
+        )
     }
 }
