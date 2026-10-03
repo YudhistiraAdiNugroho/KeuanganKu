@@ -163,7 +163,49 @@ fun TransactionFormDialog(
                     }
                 }
 
-                AppTextField(date, { date = it }, "Tanggal (yyyy-MM-dd)")
+                var showDatePicker by remember { mutableStateOf(false) }
+                Box(modifier = Modifier.fillMaxWidth().clickable { showDatePicker = true }) {
+                    OutlinedTextField(
+                        value = try {
+                            prettyDate(date)
+                        } catch (_: Exception) { date },
+                        onValueChange = {},
+                        label = { Text("Tanggal") },
+                        readOnly = true,
+                        trailingIcon = { Text("📅") },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = false,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                            disabledBorderColor = MaterialTheme.colorScheme.outline,
+                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                }
+                if (showDatePicker) {
+                    val datePickerState = rememberDatePickerState(
+                        initialSelectedDateMillis = try {
+                            java.time.LocalDate.parse(date).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+                        } catch (_: Exception) { System.currentTimeMillis() }
+                    )
+                    DatePickerDialog(
+                        onDismissRequest = { showDatePicker = false },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                datePickerState.selectedDateMillis?.let { millis ->
+                                    val ld = java.time.Instant.ofEpochMilli(millis)
+                                        .atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+                                    date = ld.format(java.time.format.DateTimeFormatter.ISO_DATE)
+                                }
+                                showDatePicker = false
+                            }) { Text("OK") }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showDatePicker = false }) { Text("Batal") }
+                        }
+                    ) { DatePicker(state = datePickerState) }
+                }
                 AppTextField(note, { note = it }, "Catatan (opsional)")
 
                 ErrorText(error)
