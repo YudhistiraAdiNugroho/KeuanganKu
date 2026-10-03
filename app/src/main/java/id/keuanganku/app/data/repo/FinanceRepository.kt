@@ -279,6 +279,10 @@ class FinanceRepository(
                 if (s.deleted) dao.upsertSavingGoal(s.copy(dirty = false))
             }
             dao.purgeDeleted()
+            // Hitung ulang semua saldo akun setelah sync untuk memastikan akurat
+            for (acc in dao.accounts()) {
+                recalculateAccountBalance(acc.id)
+            }
             reloadLocal()
             OpResult.Ok(Unit)
         } catch (e: Exception) {
