@@ -79,22 +79,22 @@ fun DashboardScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp))
+                    .clip(RoundedCornerShape(28.dp))
                     .background(Brush.horizontalGradient(listOf(Brand700, Brand600)))
-                    .padding(20.dp)
+                    .padding(24.dp)
             ) {
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("Total Saldo", color = Color.White.copy(0.85f),
-                            style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                            style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                         if (syncing) CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+                            modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
                     }
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(6.dp))
                     Text(formatRp(totalBalance), color = Color.White,
-                        style = MaterialTheme.typography.headlineMedium)
-                    Spacer(Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(16.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         MiniStat("Masuk", formatRp(income), IncomeGreen)
                         MiniStat("Keluar", formatRp(expense), Color.White)
                     }
@@ -151,26 +151,26 @@ private fun RowScope.QuickAction(icon: String, label: String, onClick: () -> Uni
         modifier = Modifier
             .weight(1f)
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp, horizontal = 4.dp),
+                .padding(vertical = 10.dp, horizontal = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
                 modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(14.dp))
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(12.dp))
                     .background(iconBg),
                 contentAlignment = Alignment.Center
             ) {
-                Text(icon, style = MaterialTheme.typography.titleLarge)
+                Text(icon, style = MaterialTheme.typography.titleMedium)
             }
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(6.dp))
             Text(
                 label,
                 style = MaterialTheme.typography.labelMedium,
