@@ -259,9 +259,6 @@ fun SettingsScreen(
             AppCard {
                 ClickableRow("🔄", "Cek Pembaruan", "Periksa versi terbaru aplikasi") { onOpenUpdate() }
                 ClickableRow("🚪", "Keluar", "Hapus sesi di perangkat ini") { confirmLogout = true }
-                Spacer(Modifier.height(4.dp))
-                Text("KeuanganKu v${UpdateChecker.currentVersionName()} • data tersimpan di Supabase milikmu",
-                    style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
