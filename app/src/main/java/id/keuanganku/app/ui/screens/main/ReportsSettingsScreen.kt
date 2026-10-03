@@ -27,6 +27,7 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportsScreen(repo: FinanceRepository) {
     val txns by repo.txns.collectAsState()
