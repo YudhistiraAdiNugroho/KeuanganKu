@@ -96,7 +96,8 @@ class ReceiptViewModel(app: KeuanganKuApp) : ViewModel() {
                 if (jpeg != null && isOnline(context)) {
                     val uid = session.getUserId() ?: throw IllegalStateException("Sesi berakhir")
                     val ym = try {
-                        LocalDate.parse(date).format(DateTimeFormatter.ofPattern("yyyy/MM"))
+                        val dateOnly = if (date.length > 10) date.substring(0, 10) else date
+                        LocalDate.parse(dateOnly).format(DateTimeFormatter.ofPattern("yyyy/MM"))
                     } catch (_: Exception) {
                         LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM"))
                     }
