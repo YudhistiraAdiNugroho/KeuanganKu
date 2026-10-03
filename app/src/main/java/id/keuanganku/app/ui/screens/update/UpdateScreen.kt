@@ -118,7 +118,7 @@ fun UpdateScreen(onBack: () -> Unit) {
 
         AppCard {
             SectionTitle("Versi Terpasang")
-            Text("v${UpdateChecker.currentVersionName()} (${UpdateChecker.currentVersionCode()})",
+            Text("v${UpdateChecker.currentVersionName()}",
                 style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
         }
 
