@@ -98,9 +98,9 @@ class AuthRepository(
         OpResult.Err(e.userMessage("Kode OTP salah atau kedaluwarsa."))
     }
 
-    /** Lupa password: kirim OTP recovery. */
+    /** Lupa password: kirim OTP recovery via /otp (bukan /recover yang kirim link). */
     suspend fun requestRecoveryOtp(email: String): OpResult<Unit> = try {
-        api.recover(RecoverRequest(email.trim())).close()
+        api.sendOtp(OtpRequest(email.trim(), createUser = false)).close()
         OpResult.Ok(Unit)
     } catch (e: Exception) {
         OpResult.Err(e.userMessage("Gagal mengirim kode pemulihan."))
