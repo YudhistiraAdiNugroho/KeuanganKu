@@ -39,11 +39,12 @@ fun DashboardScreen(
     onOpenSection: (String) -> Unit
 ) {
     val txns by repo.txns.collectAsState()
-    val accounts by repo.accounts.collectAsState()
     val budgets by repo.budgets.collectAsState()
     val syncing by repo.syncing.collectAsState()
 
-    val totalBalance = accounts.sumOf { it.balance }
+    // Tanpa sistem akun: total saldo = total pemasukan - total pengeluaran (semua waktu)
+    val totalBalance = txns.filter { it.type == "income" }.sumOf { it.amount } -
+            txns.filter { it.type == "expense" }.sumOf { it.amount }
     val monthKey = currentMonthStr()
     val monthTx = txns.filter { it.date.startsWith(monthKey) }
     val income = monthTx.filter { it.type == "income" }.sumOf { it.amount }
@@ -136,7 +137,6 @@ fun DashboardScreen(
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 QuickAction("＋", "Pemasukan") { onOpenTxForm(-3L) }
                 QuickAction("－", "Pengeluaran") { onOpenTxForm(-4L) }
-                QuickAction("⇄", "Transfer") { onOpenTxForm(-2L) }
             }
         }
 
@@ -276,10 +276,10 @@ fun TxnRow(t: id.keuanganku.app.data.repo.Txn, onClick: () -> Unit = {}) {
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(
-                    t.note?.ifBlank { null } ?: t.categoryName.ifBlank { t.accountName },
+                    t.note?.ifBlank { null } ?: t.categoryName.ifBlank { "Transaksi" },
                     fontWeight = FontWeight.SemiBold, maxLines = 1
                 )
-                Text("${t.accountName} • ${prettyDate(t.date)}",
+                Text(prettyDate(t.date),
                     style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Text("$sign${formatRp(t.amount)}", fontWeight = FontWeight.Bold, color = color)
