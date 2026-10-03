@@ -88,15 +88,6 @@ fun ReceiptCaptureScreen(vm: ReceiptViewModel, onDone: (id.keuanganku.app.ui.scr
                         AppButton("📷  Ambil foto", {
                             cameraPermLauncher.launch(Manifest.permission.CAMERA)
                         })
-                        if (showCamera) {
-                            CameraScreen(
-                                onPhotoTaken = { uri ->
-                                    showCamera = false
-                                    vm.processImage(uri)
-                                },
-                                onClose = { showCamera = false }
-                            )
-                        }
                         Spacer(Modifier.height(12.dp))
                         OutlinedButton(
                             onClick = {
@@ -122,6 +113,18 @@ fun ReceiptCaptureScreen(vm: ReceiptViewModel, onDone: (id.keuanganku.app.ui.scr
                 )
                 is ReceiptUiState.Done -> {}
             }
+        }
+    }
+    // Kamera fullscreen sebagai overlay
+    if (showCamera) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            CameraScreen(
+                onPhotoTaken = { uri ->
+                    showCamera = false
+                    vm.processImage(uri)
+                },
+                onClose = { showCamera = false }
+            )
         }
     }
 }
