@@ -31,6 +31,7 @@ import kotlinx.coroutines.launch
 import id.keuanganku.app.ui.theme.*
 import id.keuanganku.app.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     repo: FinanceRepository,
