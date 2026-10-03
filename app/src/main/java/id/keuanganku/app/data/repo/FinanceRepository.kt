@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObjectBuilder
@@ -76,6 +78,7 @@ class FinanceRepository(
     val goals: StateFlow<List<SavingGoal>> = _goals.asStateFlow()
     private val _syncing = MutableStateFlow(false)
     val syncing: StateFlow<Boolean> = _syncing.asStateFlow()
+    private val syncMutex = Mutex()
 
     private fun tempId() = -(abs(Random.nextLong()) % 1_000_000_000L + 1)
 
@@ -182,12 +185,13 @@ class FinanceRepository(
 
     // ---------- push antrean offline ----------
     suspend fun syncPending(): OpResult<Unit> = withContext(Dispatchers.IO) {
-        if (!isOnline(ctx)) return@withContext OpResult.Ok(Unit)
-        // Refresh token sebelum sync agar tidak 401
-        authRepo.refreshIfNeeded()
+        syncMutex.withLock {
+            if (!isOnline(ctx)) return@withLock OpResult.Ok(Unit)
+            // Refresh token sebelum sync agar tidak 401
+            authRepo.refreshIfNeeded()
         _syncing.value = true
         try {
-            val uid = session.getUserId() ?: return@withContext OpResult.Err("Sesi berakhir.")
+            val uid = session.getUserId() ?: return@withLock OpResult.Err("Sesi berakhir.")
             val accMap = mutableMapOf<Long, Long>() // localId -> serverId
             val catMap = mutableMapOf<Long, Long>()
 
@@ -280,6 +284,7 @@ class FinanceRepository(
         } catch (e: Exception) {
             OpResult.Err(e.userMessage("Sinkronisasi gagal, dicoba lagi nanti."))
         } finally { _syncing.value = false }
+        }
     }
 
     // ---------- CRUD: Akun ----------
@@ -361,10 +366,28 @@ class FinanceRepository(
 
     suspend fun deleteTransaction(id: Long): OpResult<Unit> = withContext(Dispatchers.IO) {
         val old = dao.transactionById(id) ?: return@withContext OpResult.Err("Transaksi tidak ditemukan.")
-        applyBalanceEffect(old, -1)
         dao.upsertTransaction(old.copy(deleted = true, dirty = true))
+        recalculateAccountBalance(old.accountId)
+        old.toAccountId?.let { recalculateAccountBalance(it) }
         reloadLocal(); if (isOnline(ctx)) syncPending()
         OpResult.Ok(Unit)
+    }
+
+    /** Hitung ulang saldo akun dari semua transaksi yang tidak dihapus. */
+    private suspend fun recalculateAccountBalance(accountId: Long) {
+        val txns = dao.transactions().filter { !it.deleted && (it.accountId == accountId || it.toAccountId == accountId) }
+        var balance = 0.0
+        for (t in txns) {
+            when {
+                t.type == "income" && t.accountId == accountId -> balance += t.amount
+                t.type == "expense" && t.accountId == accountId -> balance -= t.amount
+                t.type == "transfer" && t.accountId == accountId -> balance -= t.amount
+                t.type == "transfer" && t.toAccountId == accountId -> balance += t.amount
+            }
+        }
+        dao.accountById(accountId)?.let {
+            dao.upsertAccount(it.copy(balance = balance, dirty = true))
+        }
     }
 
     /** Terapkan/batalkan efek saldo akun dari sebuah transaksi. */
