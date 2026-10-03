@@ -37,8 +37,8 @@ android {
         applicationId = "id.keuanganku.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 8
-        versionName = "1.1.6"
+        versionCode = 1
+        versionName = "1.0.0"
 
         buildConfigField("String", "SUPABASE_URL", "\"${prop("supabase.url")}\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"${prop("supabase.anonKey")}\"")
@@ -110,6 +110,13 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+    // --- CameraX ---
+    val cameraxVersion = "1.3.4"
+    implementation("androidx.camera:camera-core:${cameraxVersion}")
+    implementation("androidx.camera:camera-camera2:${cameraxVersion}")
+    implementation("androidx.camera:camera-lifecycle:${cameraxVersion}")
+    implementation("androidx.camera:camera-view:${cameraxVersion}")
 
     // --- Network: Retrofit + OkHttp + kotlinx.serialization ---
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
