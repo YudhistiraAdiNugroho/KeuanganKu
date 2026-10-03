@@ -280,6 +280,8 @@ class FinanceRepository(
             }
             dao.purgeDeleted()
             reloadLocal()
+            // Perbaiki transaksi yatim dulu, baru hitung ulang saldo
+            repairOrphanedTransactions()
             // Hitung ulang semua saldo akun SETELAH reload agar tidak ditimpa data server yang salah
             for (acc in dao.accounts()) {
                 recalculateAccountBalance(acc.id)
@@ -380,6 +382,29 @@ class FinanceRepository(
     }
 
     /** Hitung ulang saldo akun dari semua transaksi yang tidak dihapus. */
+    /** Perbaiki transaksi yatim: accountId tidak ada di tabel akun -> pindahkan ke akun pertama. */
+    private suspend fun repairOrphanedTransactions() {
+        val accounts = dao.accounts()
+        if (accounts.isEmpty()) return
+        val validIds = accounts.map { it.id }.toSet()
+        val defaultId = accounts.first().id
+        var repaired = 0
+        for (t in dao.transactions()) {
+            if (t.deleted) continue
+            var fixed = t
+            if (t.accountId !in validIds) {
+                fixed = fixed.copy(accountId = defaultId, dirty = true)
+            }
+            if (t.toAccountId != null && t.toAccountId !in validIds) {
+                fixed = fixed.copy(toAccountId = defaultId, dirty = true)
+            }
+            if (fixed != t) {
+                dao.upsertTransaction(fixed)
+                repaired++
+            }
+        }
+    }
+
     private suspend fun recalculateAccountBalance(accountId: Long) {
         val txns = dao.transactions().filter { !it.deleted && (it.accountId == accountId || it.toAccountId == accountId) }
         var balance = 0.0
