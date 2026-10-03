@@ -9,6 +9,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -48,7 +50,22 @@ fun TransactionsScreen(repo: FinanceRepository) {
         },
         snackbarHost = { SnackbarHost(snackbar) }
     ) { pad ->
-        Column(Modifier.padding(pad).padding(16.dp)) {
+        var isRefreshing by remember { mutableStateOf(false) }
+        val pullRefreshState = rememberPullToRefreshState()
+        val syncing by repo.syncing.collectAsState()
+        PullToRefreshBox(
+            isRefreshing = isRefreshing || syncing,
+            onRefresh = {
+                isRefreshing = true
+                scope.launch {
+                    repo.syncPending()
+                    isRefreshing = false
+                }
+            },
+            state = pullRefreshState,
+            modifier = Modifier.padding(pad)
+        ) {
+        Column(Modifier.padding(16.dp)) {
             Text("Transaksi", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
             Spacer(Modifier.height(8.dp))
             AppTextField(query, { query = it }, "Cari transaksi…")
@@ -83,6 +100,7 @@ fun TransactionsScreen(repo: FinanceRepository) {
                 }
             }
         }
+    }
     }
 
     // Form tambah/ubah (dipicu FAB & klik baris di layar ini)
@@ -213,6 +231,7 @@ fun TransactionFormDialog(
                 ErrorText(error)
 
                 AppButton(if (editing != null) "Simpan perubahan" else "Simpan", {
+                    if (saving) return@AppButton // cegah double-tap
                     val amt = amount.toDoubleOrNull() ?: 0.0
                     if (amt <= 0) { error = "Nominal harus lebih dari 0"; return@AppButton }
                     if (accountId == null) { error = "Pilih akun dulu"; return@AppButton }
