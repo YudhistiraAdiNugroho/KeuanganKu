@@ -146,7 +146,8 @@ fun ReportsScreen(repo: FinanceRepository) {
 @Composable
 private fun StatCard(label: String, value: String, accent: Color, modifier: Modifier = Modifier) {
     Card(modifier, shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)) {
         Column(Modifier.padding(14.dp)) {
             Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(4.dp))
@@ -289,7 +290,7 @@ fun CategoryFormDialog(repo: FinanceRepository, type: String, onDismiss: () -> U
         listOf("🛒", "🍔", "🚗", "🏠", "💡", "🎮", "👕", "🏥", "📚", "✈️", "📦", "💸")
 
     Dialog(onDismissRequest = onDismiss) {
-        Card(shape = RoundedCornerShape(24.dp)) {
+        Card(shape = RoundedCornerShape(24.dp), elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("Kategori baru", style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold)
