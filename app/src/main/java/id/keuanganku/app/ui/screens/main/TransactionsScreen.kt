@@ -145,7 +145,8 @@ fun TransactionFormDialog(
                 }
 
                 AppTextField(amount, { amount = it.filter(Char::isDigit) }, "Nominal (Rp)",
-                    keyboardType = KeyboardType.Number)
+                    keyboardType = KeyboardType.Number,
+                    visualTransformation = ThousandSeparatorTransformation())
 
                 DropdownField("Akun", accounts.map { it.name }, accounts.indexOfFirst { it.id == accountId }.takeIf { it >= 0 }) {
                     accountId = accounts.getOrNull(it)?.id
