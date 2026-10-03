@@ -134,9 +134,9 @@ fun DashboardScreen(
 
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                QuickAction("＋", "Tambah") { onOpenTxForm(null) }
+                QuickAction("＋", "Pemasukan") { onOpenTxForm(-3L) }
+                QuickAction("－", "Pengeluaran") { onOpenTxForm(-4L) }
                 QuickAction("⇄", "Transfer") { onOpenTxForm(-2L) }
-                QuickAction("🎯", "Anggaran") { onOpenSection("anggaran") }
             }
         }
 
@@ -175,7 +175,8 @@ private fun RowScope.MiniStat(label: String, value: String, accent: Color) {
 @Composable
 private fun RowScope.QuickAction(icon: String, label: String, onClick: () -> Unit) {
     val iconBg = when (label) {
-        "Tambah" -> Brand100
+        "Pemasukan" -> Brand100
+        "Pengeluaran" -> Color(0xFFFFEBEE)
         "Transfer" -> Color(0xFFE0F2FE)
         else -> Color(0xFFFFF3E0)
     }
