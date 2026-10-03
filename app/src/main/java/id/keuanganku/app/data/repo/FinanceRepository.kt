@@ -305,18 +305,23 @@ class FinanceRepository(
 
             // 3. Transaksi
             for (t in dao.dirtyTransactions()) {
-                val sAcc = accMap[t.accountId] ?: defaultServerAccId ?: continue
-                val sTo = t.toAccountId?.let { accMap[it] }
-                val sCat = t.categoryId?.let { catMap[it] }
-                if (t.deleted) {
-                    t.serverId?.let { try { api.deleteTransaction("eq.${it}") } catch (_: Exception) {} }
-                    dao.upsertTransaction(t.copy(dirty = false))
-                } else if (t.serverId == null) {
-                    val created = api.createTransaction(TransactionDto(null, uid, sAcc, sTo, sCat, t.type, t.amount, t.date, t.note, t.receiptUrl)).first()
-                    dao.upsertTransaction(t.copy(serverId = created.id, dirty = false))
-                } else {
-                    api.updateTransaction("eq.${t.serverId}", buildJsonObject { put("account_id", sAcc); putN("to_account_id", sTo); putN("category_id", sCat); put("type", t.type); put("amount", t.amount); put("date", t.date); putN("note", t.note); putN("receipt_url", t.receiptUrl) })
-                    dao.upsertTransaction(t.copy(dirty = false))
+                try {
+                    val sAcc = accMap[t.accountId] ?: defaultServerAccId ?: continue
+                    val sTo = t.toAccountId?.let { accMap[it] }
+                    val sCat = t.categoryId?.let { catMap[it] }
+                    if (t.deleted) {
+                        t.serverId?.let { try { api.deleteTransaction("eq.${it}") } catch (_: Exception) {} }
+                        dao.upsertTransaction(t.copy(dirty = false))
+                    } else if (t.serverId == null) {
+                        val created = api.createTransaction(TransactionDto(null, uid, sAcc, sTo, sCat, t.type, t.amount, t.date, t.note, t.receiptUrl)).first()
+                        dao.upsertTransaction(t.copy(serverId = created.id, dirty = false))
+                    } else {
+                        api.updateTransaction("eq.${t.serverId}", buildJsonObject { put("account_id", sAcc); putN("to_account_id", sTo); putN("category_id", sCat); put("type", t.type); put("amount", t.amount); put("date", t.date); putN("note", t.note); putN("receipt_url", t.receiptUrl) })
+                        dao.upsertTransaction(t.copy(dirty = false))
+                    }
+                } catch (_: Exception) {
+                    // Satu transaksi gagal: lewati, lanjut ke berikutnya
+                    continue
                 }
             }
             // 4. Anggaran
