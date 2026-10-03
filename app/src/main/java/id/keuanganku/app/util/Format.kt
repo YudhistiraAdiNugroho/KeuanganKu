@@ -19,8 +19,21 @@ fun currentMonthStr(): String =
     LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM"))
 
 fun prettyDate(iso: String): String = try {
-    LocalDate.parse(iso).format(DateTimeFormatter.ofPattern("d MMM yyyy", idLocale))
+    LocalDate.parse(iso).format(DateTimeFormatter.ofPattern("dd MMM yyyy", idLocale))
 } catch (_: Exception) { iso }
+
+fun prettyDateTime(iso: String): String = try {
+    // Format baru: "yyyy-MM-dd HH:mm", format lama: "yyyy-MM-dd"
+    if (iso.length > 10) {
+        val dt = java.time.LocalDateTime.parse(iso, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+        dt.format(DateTimeFormatter.ofPattern("dd MMM yyyy || HH:mm", idLocale))
+    } else {
+        prettyDate(iso)
+    }
+} catch (_: Exception) { iso }
+
+fun nowDateTimeStr(): String =
+    java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
 
 fun monthName(yyyyMm: String): String = try {
     val (y, m) = yyyyMm.split("-")
