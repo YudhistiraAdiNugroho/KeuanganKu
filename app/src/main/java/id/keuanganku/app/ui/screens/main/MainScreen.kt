@@ -54,11 +54,12 @@ fun MainScreen(
                                 if (t.route == MainTabs.SCAN) {
                                     FloatingActionButton(
                                         onClick = onScan,
-                                        modifier = Modifier.size(52.dp),
+                                        modifier = Modifier.size(64.dp),
                                         containerColor = Brand600
                                     ) {
                                         Icon(t.icon, "Pindai struk",
-                                            tint = androidx.compose.ui.graphics.Color.White)
+                                            tint = androidx.compose.ui.graphics.Color.White,
+                                            modifier = Modifier.size(32.dp))
                                     }
                                 } else Icon(t.icon, t.label)
                             },
