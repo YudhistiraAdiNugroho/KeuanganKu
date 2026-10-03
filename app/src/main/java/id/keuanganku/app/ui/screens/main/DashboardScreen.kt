@@ -98,8 +98,6 @@ fun DashboardScreen(
                         MiniStat("Masuk", formatRp(income), IncomeGreen)
                         MiniStat("Keluar", formatRp(expense), Color.White)
                     }
-                    Text(monthName(monthKey), color = Color.White.copy(0.7f),
-                        style = MaterialTheme.typography.labelSmall)
                 }
             }
         }
@@ -158,7 +156,9 @@ private fun RowScope.QuickAction(icon: String, label: String, onClick: () -> Uni
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            Modifier.padding(vertical = 16.dp, horizontal = 8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp, horizontal = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
@@ -171,7 +171,13 @@ private fun RowScope.QuickAction(icon: String, label: String, onClick: () -> Uni
                 Text(icon, style = MaterialTheme.typography.titleLarge)
             }
             Spacer(Modifier.height(8.dp))
-            Text(label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
         }
     }
 }
