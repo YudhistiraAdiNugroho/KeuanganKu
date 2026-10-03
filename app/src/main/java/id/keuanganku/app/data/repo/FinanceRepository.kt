@@ -184,6 +184,92 @@ class FinanceRepository(
     }
 
     // ---------- push antrean offline ----------
+    /** Pull data bersih dari server, merge ke lokal (jangan timpa yang dirty). */
+    private suspend fun pullFromServer(uid: String) {
+        try {
+            // 1. Pull accounts
+            val serverAccounts = api.getAccounts()
+            val localAccounts = dao.accounts() // fetch sekali di luar loop
+            val serverIdToLocalId = mutableMapOf<Long, Long>()
+            for (sa in serverAccounts) {
+                val sid = sa.id ?: continue
+                val existing = localAccounts.find { it.serverId == sid }
+                if (existing != null) {
+                    serverIdToLocalId[sid] = existing.id
+                    // Jangan timpa yang dirty (ada perubahan lokal belum sync)
+                    if (!existing.dirty) {
+                        dao.upsertAccount(existing.copy(
+                            name = sa.name, type = sa.type,
+                            balance = sa.balance, icon = sa.icon,
+                            dirty = false
+                        ))
+                    }
+                } else {
+                    // Insert baru dengan temp ID lokal
+                    val newId = tempId()
+                    dao.upsertAccount(AccountEntity(
+                        id = newId, serverId = sid, userId = uid,
+                        name = sa.name, type = sa.type,
+                        balance = sa.balance, icon = sa.icon,
+                        dirty = false, deleted = false
+                    ))
+                    serverIdToLocalId[sid] = newId
+                }
+            }
+            // 1b. Pull categories untuk mapping
+            val serverCategories = try { api.getCategories() } catch (_: Exception) { emptyList() }
+            val localCategories = dao.categories()
+            val catServerToLocal = mutableMapOf<Long, Long>()
+            for (sc in serverCategories) {
+                val sid = sc.id ?: continue
+                val existing = localCategories.find { it.serverId == sid }
+                if (existing != null) {
+                    catServerToLocal[sid] = existing.id
+                } else {
+                    val newId = tempId()
+                    dao.upsertCategory(CategoryEntity(
+                        id = newId, serverId = sid, userId = uid,
+                        name = sc.name, type = sc.type, icon = sc.icon,
+                        dirty = false, deleted = false
+                    ))
+                    catServerToLocal[sid] = newId
+                }
+            }
+            // 2. Pull transactions
+            val serverTxns = api.getTransactions()
+            val localTxns = dao.transactions() // fetch sekali di luar loop
+            for (st in serverTxns) {
+                val sid = st.id ?: continue
+                val localAccId = serverIdToLocalId[st.accountId] ?: continue
+                val localToAccId = st.toAccountId?.let { serverIdToLocalId[it] }
+                val localCatId = st.categoryId?.let { catServerToLocal[it] }
+                val existing = localTxns.find { it.serverId == sid }
+                if (existing != null) {
+                    if (!existing.dirty) {
+                        dao.upsertTransaction(existing.copy(
+                            accountId = localAccId, toAccountId = localToAccId,
+                            categoryId = localCatId,
+                            type = st.type, amount = st.amount, date = st.date,
+                            note = st.note, receiptUrl = st.receiptUrl,
+                            dirty = false
+                        ))
+                    }
+                } else {
+                    dao.upsertTransaction(TransactionEntity(
+                        id = tempId(), serverId = sid, userId = uid,
+                        accountId = localAccId, toAccountId = localToAccId,
+                        categoryId = localCatId, type = st.type, amount = st.amount,
+                        date = st.date, note = st.note,
+                        receiptUrl = st.receiptUrl, receiptLocalPath = null,
+                        dirty = false, deleted = false
+                    ))
+                }
+            }
+        } catch (e: Exception) {
+            // Pull gagal: lanjut dengan data lokal, jangan crash sync
+        }
+    }
+
     suspend fun syncPending(): OpResult<Unit> = withContext(Dispatchers.IO) {
         syncMutex.withLock {
             if (!isOnline(ctx)) return@withLock OpResult.Ok(Unit)
@@ -279,6 +365,8 @@ class FinanceRepository(
                 if (s.deleted) dao.upsertSavingGoal(s.copy(dirty = false))
             }
             dao.purgeDeleted()
+            // Pull data bersih dari server untuk perbaiki data lokal yang korup
+            pullFromServer(uid)
             reloadLocal()
             // Perbaiki transaksi yatim dulu, baru hitung ulang saldo
             repairOrphanedTransactions()
