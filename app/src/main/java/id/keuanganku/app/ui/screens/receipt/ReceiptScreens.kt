@@ -32,24 +32,17 @@ import id.keuanganku.app.util.*
 @Composable
 fun ReceiptCaptureScreen(vm: ReceiptViewModel, onDone: (id.keuanganku.app.ui.screens.main.PrefillTxn) -> Unit, onBack: () -> Unit) {
     val state by vm.state.collectAsState()
-    var cameraUri by remember { mutableStateOf<Uri?>(null) }
+    var showCamera by remember { mutableStateOf(false) }
 
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { vm.processImage(it) }
     }
-    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
-        if (ok) cameraUri?.let { vm.processImage(it) }
-    }
     val cameraPermLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) {
-            try {
-                val uri = vm.newCameraUri()
-                cameraUri = uri
-                cameraLauncher.launch(uri)
-            } catch (e: Exception) {
-                vm.setError("Tidak bisa membuka kamera: ${e.message ?: "aplikasi kamera tidak ditemukan"}")
-            }
+            showCamera = true
+        } else {
+            vm.setError("Izin kamera diperlukan untuk mengambil foto struk.")
         }
     }
     val galleryPermLauncher = rememberLauncherForActivityResult(
@@ -95,6 +88,15 @@ fun ReceiptCaptureScreen(vm: ReceiptViewModel, onDone: (id.keuanganku.app.ui.scr
                         AppButton("📷  Ambil foto", {
                             cameraPermLauncher.launch(Manifest.permission.CAMERA)
                         })
+                        if (showCamera) {
+                            CameraScreen(
+                                onPhotoTaken = { uri ->
+                                    showCamera = false
+                                    vm.processImage(uri)
+                                },
+                                onClose = { showCamera = false }
+                            )
+                        }
                         Spacer(Modifier.height(12.dp))
                         OutlinedButton(
                             onClick = {
