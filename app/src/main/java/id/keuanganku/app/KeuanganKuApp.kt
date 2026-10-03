@@ -42,7 +42,7 @@ class KeuanganKuApp : Application() {
             .fallbackToDestructiveMigration()
             .build()
 
-        financeRepo = FinanceRepository(this, restApi, db.financeDao(), session)
+        financeRepo = FinanceRepository(this, restApi, db.financeDao(), session, authRepo)
 
         nineRouterApi = NetworkModule.nineRouter().create(NineRouterApi::class.java)
 
