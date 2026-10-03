@@ -88,7 +88,7 @@ fun TransactionsScreen(repo: FinanceRepository) {
     // Form tambah/ubah (dipicu FAB & klik baris di layar ini)
     formTarget?.let { target ->
         val initialType = if (target == -2L) "transfer" else null
-        val editId = if (target > 0) target else null
+        val editId = if (target != -1L && target != -2L) target else null
         TransactionFormDialog(
             repo = repo,
             editingId = editId,
@@ -130,7 +130,7 @@ fun TransactionFormDialog(
     val cats = categories.filter { it.type == if (type == "income") "income" else "expense" }
 
     Dialog(onDismissRequest = onDismiss) {
-        Card(shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)) {
+        Card(shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp), elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)) {
             Column(
                 modifier = Modifier
                     .padding(20.dp)
