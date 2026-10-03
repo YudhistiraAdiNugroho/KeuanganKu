@@ -56,17 +56,20 @@ fun DashboardScreen(
             }
             var userName by remember { mutableStateOf("") }
             LaunchedEffect(Unit) {
-                userName = repo.getUserName()?.split(" ")?.firstOrNull() ?: ""
+                val raw = repo.getUserName()?.split(" ")?.firstOrNull() ?: ""
+                userName = raw.replaceFirstChar { it.uppercase() }
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     if (userName.isNotBlank()) "$greeting, $userName" else greeting,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Text(
+                    formatTanggalHariIni(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Spacer(Modifier.height(4.dp))
@@ -141,16 +144,33 @@ private fun RowScope.MiniStat(label: String, value: String, accent: Color) {
 
 @Composable
 private fun RowScope.QuickAction(icon: String, label: String, onClick: () -> Unit) {
+    val iconBg = when (label) {
+        "Tambah" -> Brand100
+        "Transfer" -> Color(0xFFE0F2FE)
+        else -> Color(0xFFFFF3E0)
+    }
     Card(
         modifier = Modifier
             .weight(1f)
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(icon, style = MaterialTheme.typography.titleLarge)
-            Spacer(Modifier.height(4.dp))
+        Column(
+            Modifier.padding(vertical = 16.dp, horizontal = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(iconBg),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(icon, style = MaterialTheme.typography.titleLarge)
+            }
+            Spacer(Modifier.height(8.dp))
             Text(label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
         }
     }
