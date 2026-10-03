@@ -155,7 +155,7 @@ interface NineRouterApi {
 }
 
 object NetworkModule {
-    val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    val json = Json { ignoreUnknownKeys = true; encodeDefaults = true; explicitNulls = false }
 
     private fun baseClient(authToken: () -> String?): OkHttpClient {
         return OkHttpClient.Builder()
