@@ -37,8 +37,8 @@ android {
         applicationId = "id.keuanganku.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 13
-        versionName = "1.1.11"
+        versionCode = 14
+        versionName = "1.1.12"
 
         buildConfigField("String", "SUPABASE_URL", "\"${prop("supabase.url")}\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"${prop("supabase.anonKey")}\"")
