@@ -10,6 +10,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -20,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import id.keuanganku.app.data.repo.FinanceRepository
 import id.keuanganku.app.ui.components.*
+import kotlinx.coroutines.launch
 import id.keuanganku.app.ui.theme.*
 import id.keuanganku.app.util.*
 
@@ -40,6 +43,22 @@ fun DashboardScreen(
     val income = monthTx.filter { it.type == "income" }.sumOf { it.amount }
     val expense = monthTx.filter { it.type == "expense" }.sumOf { it.amount }
 
+    var isRefreshing by remember { mutableStateOf(false) }
+    val pullRefreshState = rememberPullToRefreshState()
+    val scope = rememberCoroutineScope()
+
+    PullToRefreshBox(
+        isRefreshing = isRefreshing || syncing,
+        onRefresh = {
+            isRefreshing = true
+            scope.launch {
+                repo.syncPending()
+                isRefreshing = false
+            }
+        },
+        state = pullRefreshState,
+        modifier = Modifier.fillMaxSize()
+    ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -129,6 +148,7 @@ fun DashboardScreen(
                 TxnRow(t, onClick = { onOpenTxForm(t.id) })
             }
         }
+    }
     }
 }
 
