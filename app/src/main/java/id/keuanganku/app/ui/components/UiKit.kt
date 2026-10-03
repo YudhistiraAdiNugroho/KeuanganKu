@@ -6,6 +6,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
@@ -23,7 +26,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import id.keuanganku.app.ui.theme.*
@@ -224,11 +226,11 @@ fun ClickableRow(icon: String, title: String, subtitle: String = "", onClick: ()
 
 /** Format angka dengan titik pemisah ribuan saat diketik (50000 -> 50.000). */
 class ThousandSeparatorTransformation : VisualTransformation {
-    override fun filter(text: androidx.compose.ui.text.AnnotatedString): androidx.compose.ui.text.input.TransformedText {
+    override fun filter(text: AnnotatedString): TransformedText {
         val original = text.text.filter(Char::isDigit)
-        if (original.isEmpty()) return androidx.compose.ui.text.input.TransformedText(text, androidx.compose.ui.text.input.OffsetMapping.Identity)
+        if (original.isEmpty()) return TransformedText(text, OffsetMapping.Identity)
         val formatted = original.reversed().chunked(3).joinToString(".").reversed()
-        val offsetMapping = object : androidx.compose.ui.text.input.OffsetMapping {
+        val offsetMapping = object : OffsetMapping {
             override fun originalToTransformed(offset: Int): Int {
                 val digitsBefore = text.text.take(offset).count(Char::isDigit)
                 var transformedOffset = 0
@@ -244,8 +246,6 @@ class ThousandSeparatorTransformation : VisualTransformation {
                 return formatted.take(offset).count(Char::isDigit)
             }
         }
-        return androidx.compose.ui.text.input.TransformedText(
-            androidx.compose.ui.text.AnnotatedString(formatted), offsetMapping
-        )
+        return TransformedText(AnnotatedString(formatted), offsetMapping)
     }
 }
