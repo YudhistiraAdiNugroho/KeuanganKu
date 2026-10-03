@@ -33,7 +33,7 @@ fun AppCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         content = { Column(Modifier.padding(16.dp), content = content) }
     )
 }
