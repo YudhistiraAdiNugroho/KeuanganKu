@@ -7,6 +7,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,6 +59,22 @@ fun ReportsScreen(repo: FinanceRepository) {
         .toList().sortedByDescending { it.second }
     val maxCat = (byCat.maxOfOrNull { it.second } ?: 1.0).coerceAtLeast(1.0)
 
+    var isRefreshing by remember { mutableStateOf(false) }
+    val pullRefreshState = rememberPullToRefreshState()
+    val syncing by repo.syncing.collectAsState()
+    val scope = rememberCoroutineScope()
+    PullToRefreshBox(
+        isRefreshing = isRefreshing || syncing,
+        onRefresh = {
+            isRefreshing = true
+            scope.launch {
+                repo.syncPending()
+                isRefreshing = false
+            }
+        },
+        state = pullRefreshState,
+        modifier = Modifier.fillMaxSize()
+    ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -140,6 +158,7 @@ fun ReportsScreen(repo: FinanceRepository) {
                 }
             }
         }
+    }
     }
 }
 
