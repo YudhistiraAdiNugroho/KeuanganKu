@@ -213,7 +213,6 @@ fun SettingsScreen(
         item {
             AppCard {
                 SectionTitle("Fitur")
-                ClickableRow("🏦", "Akun", "Kelola dompet, bank & e-wallet") { onOpenSection("akun") }
                 ClickableRow("🎯", "Anggaran", "Batas belanja per kategori") { onOpenSection("anggaran") }
                 ClickableRow("🔁", "Berulang", "Jadwal transaksi otomatis") { onOpenSection("berulang") }
                 ClickableRow("🐷", "Tabungan", "Target menabung") { onOpenSection("tabungan") }
