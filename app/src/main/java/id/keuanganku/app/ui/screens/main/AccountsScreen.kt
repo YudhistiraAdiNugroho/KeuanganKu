@@ -50,7 +50,8 @@ fun AccountsScreen(repo: FinanceRepository) {
             else LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(accounts, key = { it.id }) { a ->
                     Card(shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)) {
                         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                             IconCircle(a.icon)
                             Spacer(Modifier.width(12.dp))
@@ -111,7 +112,7 @@ fun AccountFormDialog(repo: FinanceRepository, editing: id.keuanganku.app.data.r
     val scope = rememberCoroutineScope()
 
     Dialog(onDismissRequest = onDismiss) {
-        Card(shape = RoundedCornerShape(24.dp)) {
+        Card(shape = RoundedCornerShape(24.dp), elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(if (editing != null) "Ubah akun" else "Akun baru",
                     style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
