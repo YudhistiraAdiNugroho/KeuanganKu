@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import id.keuanganku.app.data.repo.FinanceRepository
 import id.keuanganku.app.data.repo.OpResult
+import id.keuanganku.app.data.update.UpdateChecker
 import id.keuanganku.app.ui.components.*
 import id.keuanganku.app.ui.theme.*
 import id.keuanganku.app.util.*
@@ -258,7 +259,7 @@ fun SettingsScreen(
                 ClickableRow("🔄", "Cek Pembaruan", "Periksa versi terbaru aplikasi") { onOpenUpdate() }
                 ClickableRow("🚪", "Keluar", "Hapus sesi di perangkat ini") { confirmLogout = true }
                 Spacer(Modifier.height(4.dp))
-                Text("KeuanganKu v1.0.0 • data tersimpan di Supabase milikmu",
+                Text("KeuanganKu v${UpdateChecker.currentVersionName()} • data tersimpan di Supabase milikmu",
                     style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
