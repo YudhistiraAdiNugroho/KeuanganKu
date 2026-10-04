@@ -349,6 +349,8 @@ class FinanceRepository(
             }
 
             // 3. Transaksi
+            // Fetch sekali untuk cek duplikat (jangan per transaksi - lambat)
+            val serverTxnsForDupCheck = try { api.getTransactions() } catch (_: Exception) { null }
             for (t in dao.dirtyTransactions()) {
                 try {
                     val sAcc = accMap[t.accountId] ?: defaultServerAccId ?: continue
@@ -361,12 +363,11 @@ class FinanceRepository(
                         // Cek duplikat: pastikan server belum punya transaksi ini
                         // (mencegah duplikat jika push sebelumnya sukses tapi respons hilang)
                         // JANGAN SIMPAN DUPLIKAT: jika tidak bisa verifikasi, lewati (jangan buat)
-                        val serverTxns = try { api.getTransactions() } catch (_: Exception) { null }
-                        if (serverTxns == null) {
+                        if (serverTxnsForDupCheck == null) {
                             // Tidak bisa verifikasi, lewati transaksi ini (coba lagi sync berikutnya)
                             continue
                         }
-                        val duplicate = serverTxns.find {
+                        val duplicate = serverTxnsForDupCheck.find {
                             it.amount == t.amount && it.date == t.date && it.type == t.type &&
                             it.note == t.note && it.id != null
                         }
