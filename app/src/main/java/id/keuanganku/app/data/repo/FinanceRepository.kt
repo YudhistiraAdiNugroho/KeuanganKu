@@ -187,6 +187,37 @@ class FinanceRepository(
     /** Pull data bersih dari server, merge ke lokal (jangan timpa yang dirty). */
     private suspend fun pullFromServer(uid: String) {
         try {
+            // Bersihkan duplikat di SERVER: jika ada beberapa record dengan
+            // amount+date+type+note sama, hapus duplikatnya (pertahankan ID terkecil)
+            try {
+                val serverTxns = api.getTransactions()
+                val seen = mutableMapOf<String, Long>()
+                for (st in serverTxns) {
+                    val sid = st.id ?: continue
+                    val key = "${st.amount}|${st.date}|${st.type}|${st.note}"
+                    val firstId = seen[key]
+                    if (firstId == null) {
+                        seen[key] = sid
+                    } else if (sid != firstId) {
+                        // Duplikat di server, hapus
+                        try { api.deleteTransaction("eq.$sid") } catch (_: Exception) {}
+                    }
+                }
+            } catch (_: Exception) {}
+            // Bersihkan duplikat lokal: jika ada beberapa transaksi dengan serverId sama,
+            // pertahankan yang pertama, sembunyikan sisanya (tanpa sync hapus ke server)
+            val allLocal = dao.transactions()
+            val seenServerIds = mutableSetOf<Long>()
+            for (t in allLocal) {
+                val sid = t.serverId
+                if (sid != null) {
+                    if (sid in seenServerIds) {
+                        dao.upsertTransaction(t.copy(deleted = true, dirty = false))
+                    } else {
+                        seenServerIds.add(sid)
+                    }
+                }
+            }
             // Akun tidak di-pull (sistem akun dihapus, pakai lokal saja)
             // Pastikan ada akun lokal default untuk transaksi
             var localAccounts = dao.accounts()
@@ -237,7 +268,20 @@ class FinanceRepository(
                         ))
                     }
                 } else {
-                    dao.upsertTransaction(TransactionEntity(
+                    // Cek apakah ada transaksi lokal dirty yang cocok (belum punya serverId)
+                    // Jika ada, link ke serverId ini daripada buat duplikat
+                    val matchingDirty = localTxns.find {
+                        it.serverId == null && it.dirty &&
+                        it.amount == st.amount && it.date == st.date &&
+                        it.type == st.type && it.note == st.note
+                    }
+                    if (matchingDirty != null) {
+                        dao.upsertTransaction(matchingDirty.copy(
+                            serverId = sid, accountId = defaultAccId,
+                            categoryId = localCatId, dirty = false
+                        ))
+                    } else {
+                        dao.upsertTransaction(TransactionEntity(
                         id = tempId(), serverId = sid, userId = uid,
                         accountId = defaultAccId, toAccountId = null,
                         categoryId = localCatId, type = st.type, amount = st.amount,
@@ -245,6 +289,7 @@ class FinanceRepository(
                         receiptUrl = st.receiptUrl, receiptLocalPath = null,
                         dirty = false, deleted = false
                     ))
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -313,8 +358,25 @@ class FinanceRepository(
                         t.serverId?.let { try { api.deleteTransaction("eq.${it}") } catch (_: Exception) {} }
                         dao.upsertTransaction(t.copy(dirty = false))
                     } else if (t.serverId == null) {
-                        val created = api.createTransaction(TransactionDto(null, uid, sAcc, sTo, sCat, t.type, t.amount, t.date, t.note, t.receiptUrl)).first()
-                        dao.upsertTransaction(t.copy(serverId = created.id, dirty = false))
+                        // Cek duplikat: pastikan server belum punya transaksi ini
+                        // (mencegah duplikat jika push sebelumnya sukses tapi respons hilang)
+                        // JANGAN SIMPAN DUPLIKAT: jika tidak bisa verifikasi, lewati (jangan buat)
+                        val serverTxns = try { api.getTransactions() } catch (_: Exception) { null }
+                        if (serverTxns == null) {
+                            // Tidak bisa verifikasi, lewati transaksi ini (coba lagi sync berikutnya)
+                            continue
+                        }
+                        val duplicate = serverTxns.find {
+                            it.amount == t.amount && it.date == t.date && it.type == t.type &&
+                            it.note == t.note && it.id != null
+                        }
+                        if (duplicate?.id != null) {
+                            // Sudah ada di server, tinggal link
+                            dao.upsertTransaction(t.copy(serverId = duplicate.id, dirty = false))
+                        } else {
+                            val created = api.createTransaction(TransactionDto(null, uid, sAcc, sTo, sCat, t.type, t.amount, t.date, t.note, t.receiptUrl)).first()
+                            dao.upsertTransaction(t.copy(serverId = created.id, dirty = false))
+                        }
                     } else {
                         api.updateTransaction("eq.${t.serverId}", buildJsonObject { put("account_id", sAcc); putN("to_account_id", sTo); putN("category_id", sCat); put("type", t.type); put("amount", t.amount); put("date", t.date); putN("note", t.note); putN("receipt_url", t.receiptUrl) })
                         dao.upsertTransaction(t.copy(dirty = false))
