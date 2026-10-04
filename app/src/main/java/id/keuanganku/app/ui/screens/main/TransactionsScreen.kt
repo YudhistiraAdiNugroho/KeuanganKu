@@ -181,7 +181,7 @@ fun TransactionFormDialog(
                 Box(modifier = Modifier.fillMaxWidth().clickable { showDatePicker = true }) {
                     OutlinedTextField(
                         value = try {
-                            prettyDate(date)
+                            prettyDateTime(date)
                         } catch (_: Exception) { date },
                         onValueChange = {},
                         label = { Text("Tanggal") },
