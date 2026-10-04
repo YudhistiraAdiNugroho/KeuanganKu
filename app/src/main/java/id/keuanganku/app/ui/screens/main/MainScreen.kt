@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import id.keuanganku.app.data.repo.FinanceRepository
 import id.keuanganku.app.ui.navigation.MainTabs
 import id.keuanganku.app.ui.theme.Brand600
@@ -63,7 +64,9 @@ fun MainScreen(
                                     }
                                 } else Icon(t.icon, t.label)
                             },
-                            label = { if (t.route != MainTabs.SCAN) Text(t.label) },
+                            label = { if (t.route != MainTabs.SCAN) Text(t.label,
+                                maxLines = 1,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)) },
                             alwaysShowLabel = t.route != MainTabs.SCAN
                         )
                     }
