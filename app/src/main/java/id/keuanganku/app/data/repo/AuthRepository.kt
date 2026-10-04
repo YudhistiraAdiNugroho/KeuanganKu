@@ -86,8 +86,9 @@ class AuthRepository(
     /** Langkah 2 daftar: verifikasi OTP (tipe "email") lalu buat akun dengan password. */
     suspend fun verifyRegisterOtp(email: String, code: String, password: String, name: String): OpResult<Unit> = try {
         val s = api.verifyOtp(VerifyRequest(email.trim(), code.trim(), "email"))
-        // Set password pada user yang baru terverifikasi
-        api.updateUser("Bearer ${s.accessToken}", UpdateUserRequest(password))
+        // Set password + simpan nama ke user_metadata Supabase
+        val nameData = if (name.isNotBlank()) mapOf("name" to name.trim()) else null
+        api.updateUser("Bearer ${s.accessToken}", UpdateUserRequest(password, nameData))
         val displayName = name.ifBlank {
             s.user.userMetadata["name"]?.jsonPrimitive?.contentOrNull
                 ?: s.user.email?.substringBefore("@") ?: "Pengguna"
