@@ -42,6 +42,11 @@ fun DashboardScreen(
     val budgets by repo.budgets.collectAsState()
     val syncing by repo.syncing.collectAsState()
 
+    // Auto-sync saat dashboard dibuka
+    LaunchedEffect(Unit) {
+        try { repo.syncPending() } catch (_: Exception) {}
+    }
+
     // Tanpa sistem akun: total saldo = total pemasukan - total pengeluaran (semua waktu)
     val totalBalance = txns.filter { it.type == "income" }.sumOf { it.amount } -
             txns.filter { it.type == "expense" }.sumOf { it.amount }
