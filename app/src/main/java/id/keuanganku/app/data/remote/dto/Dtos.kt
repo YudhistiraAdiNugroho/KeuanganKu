@@ -28,7 +28,7 @@ data class VerifyRequest(val email: String, val token: String, val type: String)
 data class RecoverRequest(val email: String)
 
 @Serializable
-data class UpdateUserRequest(val password: String)
+data class UpdateUserRequest(val password: String, val data: Map<String, String>? = null)
 
 @Serializable
 data class RefreshRequest(@SerialName("refresh_token") val refreshToken: String)
